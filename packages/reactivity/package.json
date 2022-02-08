@@ -1,0 +1,21 @@
+{
+  "name": "@mini-vue3/reactivity",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "module": "dist/reactivity.esm-bundler.js",
+  "buildOptions": {
+    "name": "MiniVue3Reactivity",
+    "formats": [
+      "cjs",
+      "esm-bundler",
+      "global"
+    ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

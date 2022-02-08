@@ -1,0 +1,19 @@
+{
+  "name": "@mini-vue3/shared",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "buildOptions": {
+    "name": "MiniVue3Shared",
+    "formats": [
+      "cjs",
+      "esm-bundler"
+    ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
