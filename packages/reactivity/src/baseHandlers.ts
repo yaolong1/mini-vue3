@@ -1,4 +1,6 @@
 import { extend, isObject } from "@mini-vue3/shared"
+import { track } from "./effect"
+import { TrackOpTypes } from "./operators"
 import { reactive, readonly } from "./reactive"
 //实现响应式
 
@@ -12,9 +14,8 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
 
     if (!isReadOnly) {
       //不是只读收集依赖
-      console.log("收集依赖")
+      track(target, TrackOpTypes.GET, key)
     }
-    console.log('只读的,不收集依赖')
 
     //浅度代理直接返回结果 默认的Proxy只代理一层（浅度的）
     if (isShallow) {
@@ -22,7 +23,6 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
       return res
     }
 
-    console.log(isObject(res))
     //如果是对象就深度代理
     if (isObject(res)) { //vue是一上来就递归，vue3是取值时会进行代理
       return isReadOnly ? readonly(res) : reactive(res)
@@ -36,6 +36,7 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
 function createSetter(isShallow = false) { //拦截对象设置
   return function set(target, key, value) {
     const res = Reflect.set(target, key, value)
+    console.log('触发依赖')
     return res
   }
 }
