@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>响应式Api测试</title>
+</head>
+
+<body>
+  <script src="../node_modules/@mini-vue3/reactivity/dist//reactivity.global.js"></script>
+  <script>
+    const {
+      reactive,
+      readonly,
+      shallowReactive,
+      shallowReadonly } = MiniVue3Reactivity
+
+    const state = shallowReadonly({ name: 'ss', age: { n: 1 } })
+    state.age.n = 2
+    console.log(state.age)
+
+  </script>
+</body>
+
+</html>

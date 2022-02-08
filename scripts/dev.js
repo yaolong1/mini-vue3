@@ -6,7 +6,7 @@ const fs = require('fs')
 const execa = require('execa') //开启子进程进行打包，最终还是使用rollup打包
 
 
-const target = 'shared'
+const target = 'reactivity'
 
 if (fs.statSync(`packages/${target}`).isDirectory()) {
   build(target)

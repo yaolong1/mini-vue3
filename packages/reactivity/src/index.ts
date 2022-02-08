@@ -1,6 +1,7 @@
-import { shared } from "@mini-vue3/shared"
-const reactivity = {}
 
 export {
-  reactivity
-}
+  reactive,
+  readonly,
+  shallowReactive,
+  shallowReadonly
+} from "./reactive"
