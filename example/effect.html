@@ -29,16 +29,18 @@
 
 
     const state = reactive({ name: 'xx', arr: [1, 2, 3, 4] })
-    effect(() => {
+    const runner = effect(() => {
+      console.log(state.name)
       //state.arr内部会直接访问.length在收集依赖的时候会以'length'为key存入depsMap
       app.innerHTML = state.arr
       // state.arr.length
       console.log(state.arr[3])
     })
 
+    // runner.effect.stop()
 
     setTimeout(() => {
-      state.arr.length = 3 // 修改之后[1,2,3] state.arr[3] = undefined
+      state.arr.length = 2 // 修改之后[1,2,3] state.arr[3] = undefined
     }, 2000)
 
   </script>

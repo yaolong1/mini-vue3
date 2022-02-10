@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试</title>
+</head>
+
+<body>
+  <script>
+    let set = new Set
+
+    let arr = new Set()
+    arr.add(1)
+    arr.add(2)
+    let arr2 = new Set()
+    arr.add(1)
+
+    let b = []
+    b.push(arr)
+    b.push(arr2)
+
+    // b = []
+    for (let arr of b) {
+      arr.delete(1)
+    }
+
+
+
+  </script>
+
+</body>
+
+</html>

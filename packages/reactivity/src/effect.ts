@@ -72,7 +72,28 @@ export function effect(fn, options: any = {}) {
   if (!options.lazy) {
     _effect.run()
   }
-  return effect
+  let runner = _effect.run.bind(_effect)
+  runner.effect = _effect
+  return runner
+}
+
+/**
+ * 
+ * @param effect 需要清除的effect实例
+ */
+function cleanupEffect(effect) {
+  const { deps } = effect
+  //不能直接使用deps = [] 这样只是清除了effect上deps属性,没有真正取消收集依赖时的dep关联
+
+  //下面的代码是track方法中的将依赖添加到dep集合中，再把dep push到activeEffect.deps属性上，
+  //所以如果要删除依赖关系就必须分别循环dep进行删除（因为Set是引用类型的）,
+  //直接activeEffect.deps = [] 是根本无法删除依赖关系的
+  // let dep = dpsMap.get(key) （Set集合）
+  // dep.add(activeEffect) 
+  // activeEffect.deps.push(dep)
+  for (let dep of deps) {
+    dep.delete(effect) //挨个清除与当前的实例绑定的dep
+  }
 }
 
 class ReactiveEffect {
@@ -97,6 +118,15 @@ class ReactiveEffect {
       }
     }
   }
+
+  //停止当前的effect
+  //让effect和dep取消关联，dep上面存储的移除掉即可
+  stop() {
+    if (this.active) {
+      cleanupEffect(this)
+      this.active = false
+    }
+  }
 }
 
 const isTracking = () => activeEffect !== undefined
@@ -110,8 +140,7 @@ const targetMap = new WeakMap() //使用weakMap保存响应式对象所依赖的
  * @returns 
  */
 export function track(target, trackOpType, key) {
-  console.log(`开启收集依赖-收集当前属性`, key)
-
+  console.log('当前访问属性', key)
   //每次访问都收集吗？ activeEffect（当前的effect）为空时不收集
   //例子：
   // const test = reactive({name: 'xxx'})
@@ -148,7 +177,9 @@ export function track(target, trackOpType, key) {
     //set.add(a) set.add(a)  =》 set = {() => {console.log('xx'),() => {console.log('xx')}
   }
   if (!dep.has(activeEffect)) {
+    console.log(`开启收集依赖-收集当前属性:`, key, '\n effect:', activeEffect)
     dep.add(activeEffect)
+    //deps主要用于删除当前effect对应的dep
     activeEffect.deps.push(dep)
     console.log('deps', key, activeEffect.deps)
   }
