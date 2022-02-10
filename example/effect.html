@@ -11,23 +11,34 @@
 <body>
   <div id="app"></div>
   <script src="../node_modules/@mini-vue3/reactivity/dist/reactivity.global.js"></script>
+  <!-- <script src="http://unpkg.com/vue"></script> -->
   <script>
 
     const { reactive, effect } = MiniVue3Reactivity
 
-    const data = reactive({ name: '小明' })
+    // const data = reactive({ name: '小明' })
 
+    // effect(() => {
+    //   app.textContent = '我是' + data.name + data.name
+    // })
+
+    // setTimeout(() => {
+    //   data.name = '小花'
+
+    // }, 2000)
+
+
+    const state = reactive({ name: 'xx', arr: [1, 2, 3, 4] })
     effect(() => {
-      app.textContent = '我是' + data.name + data.name
+      //state.arr内部会直接访问.length在收集依赖的时候会以'length'为key存入depsMap
+      app.innerHTML = state.arr
+      // state.arr.length
+      console.log(state.arr[3])
     })
 
-    effect(() => {
-      app.textContent = '我是' + data.name
-    })
 
     setTimeout(() => {
-      data.name = '小花'
-
+      state.arr.length = 3 // 修改之后[1,2,3] state.arr[3] = undefined
     }, 2000)
 
   </script>

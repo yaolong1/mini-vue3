@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ref</title>
+</head>
+
+<body>
+
+  <div id="app">
+    aaa
+  </div>
+  <script src="../node_modules/@mini-vue3/reactivity/dist/reactivity.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
+  <script>
+    const { effect: V3Effect, reactive: V3Reactive, toRefs: toRefsV3 } = Vue
+    const { effect: MiniV3Effect, reactive: MiniV3Reactive, toRefs: toRefsMiniV3 } = MiniVue3Reactivity
+
+
+    const { a, b } = toRefsV3(V3Reactive({ a: 1, b: 2 }))
+    const { a: a1, b: b1 } = toRefsMiniV3(MiniV3Reactive({ a: 1, b: 2 }))
+
+    V3Effect(() => {
+      console.log('aV3', a.value, b.value)
+    })
+
+    MiniV3Effect(() => {
+      console.log('aMiniV3', a1.value, b1.value)
+    })
+
+    app.addEventListener('click', () => {
+      console.log('miniV3',)
+      a.value++
+      a1.value++
+    })
+  </script>
+</body>
+
+</html>

@@ -9,18 +9,27 @@
 </head>
 
 <body>
-  <script src="../node_modules/@mini-vue3/reactivity/dist//reactivity.global.js"></script>
+  <script src="../node_modules/@mini-vue3/reactivity/dist/reactivity.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
   <script>
     const {
       reactive,
       readonly,
       shallowReactive,
-      shallowReadonly } = MiniVue3Reactivity
+      shallowReadonly, effect } = MiniVue3Reactivity
 
-    const state = shallowReadonly({ name: 'ss', age: { n: 1 } })
-    state.age.n = 2
-    console.log(state.age)
+    const state = reactive({ name: 'ss', age: { n: 1 } })
 
+    const state1 = reactive(state)
+    console.log(state === state1)
+    effect(() => {
+      console.log(state1.age.n)
+      state1.age.n = Math.random()
+    })
+
+    setTimeout(() => {
+      state1.age.n++
+    }, 2000)
   </script>
 </body>
 

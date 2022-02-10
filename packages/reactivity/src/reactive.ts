@@ -1,6 +1,9 @@
 import { isObject } from '@mini-vue3/shared';
 import { mutableHandlers, readonlyHandlers, shallowReactiveHandlers, shallowReadonlyHandlers } from './baseHandlers'
 
+export enum ReactiveFlags{
+  IS_REACTIVE = '__v_isReactive'
+ }
 
 export function reactive(target) {
   return createReactiveObject(target, false, mutableHandlers)
@@ -24,6 +27,11 @@ export function shallowReadonly(target) {
 const readonlyMap = new WeakMap()
 const reactiveMap = new WeakMap()
 export function createReactiveObject(target, isReadonly, baseHandlers) {
+
+  //如果target是一个响应式对象直接返回原对象
+  if (target[ReactiveFlags.IS_REACTIVE]) { 
+    return target
+  }
 
   //如果不是对象就直接返回 Reactive只拦截对象
   if (!isObject(target)) {
