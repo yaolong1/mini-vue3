@@ -9,3 +9,5 @@ const hasOwnProperty = Object.prototype.hasOwnProperty
 export const hasOwn = (target, key) => hasOwnProperty.call(target, key)
 
 export const hasChanged = (newValue, oldValue) => oldValue !== newValue
+
+export const isFunction = (value) => typeof value === 'function'

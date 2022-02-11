@@ -66,7 +66,7 @@ let uid = 0
  * @returns 
  */
 export function effect(fn, options: any = {}) {
-  const _effect = new ReactiveEffect(fn, options)
+  const _effect = new ReactiveEffect(fn)
 
   //非懒加载就立即执行
   if (!options.lazy) {
@@ -96,10 +96,10 @@ function cleanupEffect(effect) {
   }
 }
 
-class ReactiveEffect {
+export class ReactiveEffect {
   active = true //是否是响应式的effect
   deps = [] // 让effect记录那些属性依赖了，同时要记录当前属性依赖了哪个effect
-  constructor(public fn, public options) {
+  constructor(public fn, public scheduler = null) {
 
   }
 
@@ -111,7 +111,7 @@ class ReactiveEffect {
     if (!effectStack.includes(this)) {
       try {
         effectStack.push(activeEffect = this)
-        this.fn()
+        return this.fn()
       } finally {
         effectStack.pop()
         activeEffect = effectStack[effectStack.length - 1]
@@ -129,7 +129,7 @@ class ReactiveEffect {
   }
 }
 
-const isTracking = () => activeEffect !== undefined
+export const isTracking = () => activeEffect !== undefined
 
 const targetMap = new WeakMap() //使用weakMap保存响应式对象所依赖的依赖集 const state = reactive({age: 1})
 /**
@@ -176,15 +176,23 @@ export function track(target, trackOpType, key) {
     // let b = () => {console.log('xx')}
     //set.add(a) set.add(a)  =》 set = {() => {console.log('xx'),() => {console.log('xx')}
   }
+  //收集
+  trackEffects(dep)
+  console.log(`开启收集依赖-收集当前属性:`, key, '\n effect:', activeEffect)
+
+  console.log('deps', key, activeEffect.deps)
+  console.log('targetMap', targetMap)
+}
+
+
+export function trackEffects(dep) {
   if (!dep.has(activeEffect)) {
-    console.log(`开启收集依赖-收集当前属性:`, key, '\n effect:', activeEffect)
     dep.add(activeEffect)
     //deps主要用于删除当前effect对应的dep
     activeEffect.deps.push(dep)
-    console.log('deps', key, activeEffect.deps)
   }
-  console.log('targetMap', targetMap)
 }
+
 
 /**
  * 触发effect更新 (数组更新、对象更新，...)
@@ -264,11 +272,9 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
         add(depsMap.get('length'))
       }
   }
+  triggerEffects(effects)
+}
 
-  console.log(effects)
-
-  effects.forEach((effect: any) => effect !== activeEffect && effect.run())
-  // effects.forEach((effect: any) => effect())
-
-
+export function triggerEffects(dep) {
+  dep.forEach((effect: any) => effect !== activeEffect && (effect.scheduler ? effect.scheduler() : effect.run()))
 }

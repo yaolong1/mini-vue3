@@ -34,13 +34,12 @@
       //state.arr内部会直接访问.length在收集依赖的时候会以'length'为key存入depsMap
       app.innerHTML = state.arr
       // state.arr.length
-      console.log(state.arr[3])
+      console.log('arr3', state.arr[3])
     })
-
-    // runner.effect.stop()
-
+    runner.effect.stop()
     setTimeout(() => {
       state.arr.length = 2 // 修改之后[1,2,3] state.arr[3] = undefined
+      runner()
     }, 2000)
 
   </script>
