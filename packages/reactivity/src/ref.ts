@@ -1,7 +1,7 @@
 import { hasChanged, isArray, isObject } from "@mini-vue3/shared"
-import { track, trigger } from "./effect"
+import { isTracking, track, trackEffects, trigger, triggerEffects } from "./effect"
 import { TrackOpTypes, TriggerOpTypes } from "./operators"
-import { reactive } from "./reactive"
+import { reactive, toReactive } from "./reactive"
 
 /**
  * 深度响应式ref
@@ -49,27 +49,26 @@ function createRef(value, isShallow = false) {
   return new RefImpl(value, isShallow)
 }
 
-
-const convert = (val) => isObject(val) ? reactive(val) : val
 class RefImpl {
+  public dep //当前ref的依赖
   public _value
   public __v_isRef = true //产生实例时会被添加 表示一个ref实例
   constructor(public rawValue, public isShallow) {
 
     //如果是浅的就返回原值，如果是深度的且是对象就用reactive进行深度转换
-    this._value = isShallow ? rawValue : convert(rawValue)
+    this._value = isShallow ? rawValue : toReactive(rawValue)
   }
 
   get value() {
-    track(this, TrackOpTypes.GET, 'value')
+    trackRefValue(this)
     return this._value
   }
 
   set value(newValue) {
     if (hasChanged(newValue, this.rawValue)) {
       this.rawValue = newValue
-      this._value = this.isShallow ? newValue : convert(newValue)
-      trigger(this, TriggerOpTypes.SET, 'value', newValue)
+      this._value = this.isShallow ? newValue : toReactive(newValue)
+      triggerRefValue(newValue)
     }
   }
 }
@@ -91,3 +90,17 @@ class ObjectRefImpl {
     return this.target[this.key]
   }
 }
+
+
+export function trackRefValue(ref) {
+  if (isTracking()) {
+    const dep = ref.dep || (ref.dep = new Set)
+    trackEffects(dep)
+  }
+}
+
+export function triggerRefValue(ref) {
+  const dep = ref.dep
+  triggerEffects(dep)
+}
+

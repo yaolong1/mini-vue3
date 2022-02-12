@@ -1,9 +1,9 @@
 import { isObject } from '@mini-vue3/shared';
 import { mutableHandlers, readonlyHandlers, shallowReactiveHandlers, shallowReadonlyHandlers } from './baseHandlers'
 
-export enum ReactiveFlags{
+export enum ReactiveFlags {
   IS_REACTIVE = '__v_isReactive'
- }
+}
 
 export function reactive(target) {
   return createReactiveObject(target, false, mutableHandlers)
@@ -29,7 +29,7 @@ const reactiveMap = new WeakMap()
 export function createReactiveObject(target, isReadonly, baseHandlers) {
 
   //如果target是一个响应式对象直接返回原对象
-  if (target[ReactiveFlags.IS_REACTIVE]) { 
+  if (target[ReactiveFlags.IS_REACTIVE]) {
     return target
   }
 
@@ -47,6 +47,8 @@ export function createReactiveObject(target, isReadonly, baseHandlers) {
   }
   const proxy = new Proxy(target, baseHandlers)
   //创建完响应式对象之后将其缓存起来
-  reactiveMap.set(target,proxy)
+  reactiveMap.set(target, proxy)
   return proxy
 }
+
+export const toReactive = (val) => isObject(val) ? reactive(val) : val

@@ -50,14 +50,3 @@ class ComputedRefImpl {
   }
 }
 
-export function trackRefValue(ref) {
-  if (isTracking()) {
-    const dep = ref.dep || (ref.dep = new Set)
-    trackEffects(dep)
-  }
-}
-
-export function triggerRefValue(ref) {
-  const dep = ref.dep
-  triggerEffects(dep)
-}
