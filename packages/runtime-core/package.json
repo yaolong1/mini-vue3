@@ -1,0 +1,16 @@
+{
+  "name": "@mini-vue3/runtime-core",
+  "version": "1.0.0",
+  "description": "运行时核心模块",
+  "main": "index.js",
+  "module": "dist/runtime-core.esm-bundler.js",
+  "unpkg": "dist/runtime-core.global.js",
+  "buildOptions": {
+    "name": "MiniVue3RuntimeCore",
+    "formats": [
+      "cjs",
+      "esm-bundler",
+      "global"
+    ]
+  }
+}

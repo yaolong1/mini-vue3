@@ -1,0 +1,16 @@
+{
+  "name": "@mini-vue3/runtime-dom",
+  "version": "1.0.0",
+  "description": "dom运行时模块",
+  "main": "index.js",
+  "module": "dist/runtime-dom.esm-bundler.js",
+  "unpkg": "dist/runtime-dom.global.js",
+  "buildOptions": {
+    "name": "MiniVue3RuntimeDom",
+    "formats": [
+      "cjs",
+      "esm-bundler",
+      "global"
+    ]
+  }
+}

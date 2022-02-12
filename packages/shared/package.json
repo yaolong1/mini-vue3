@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "module": "dist/shared.esm-bundler.js",
   "buildOptions": {
     "name": "MiniVue3Shared",
     "formats": [

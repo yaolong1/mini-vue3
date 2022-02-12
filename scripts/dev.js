@@ -1,12 +1,14 @@
 //打包单个模块
 
 const fs = require('fs')
-
-
 const execa = require('execa') //开启子进程进行打包，最终还是使用rollup打包
+const minimist = require('minimist') //命令工具
 
+//获取执行命令的参数
+const args = minimist(process.argv.slice(2)) //前两个是执行的命令 node script/dev.js
+const target = args['f'] ? args['f'] : 'reactivity' //默认打包reactivity
 
-const target = 'reactivity'
+console.log('当前打包模块:', target)
 
 if (fs.statSync(`packages/${target}`).isDirectory()) {
   build(target)

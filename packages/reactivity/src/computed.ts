@@ -1,5 +1,6 @@
 import { isFunction } from "@mini-vue3/shared";
-import { isTracking, ReactiveEffect, trackEffects, triggerEffects } from "./effect";
+import { ReactiveEffect } from "./effect";
+import { trackRefValue, triggerRefValue } from "./ref";
 
 export function computed(getterOrSetter) {
   const onlyGetter = isFunction(getterOrSetter)
