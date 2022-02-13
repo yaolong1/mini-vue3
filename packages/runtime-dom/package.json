@@ -6,7 +6,7 @@
   "module": "dist/runtime-dom.esm-bundler.js",
   "unpkg": "dist/runtime-dom.global.js",
   "buildOptions": {
-    "name": "MiniVue3RuntimeDom",
+    "name": "MiniVue3RuntimeDOM",
     "formats": [
       "cjs",
       "esm-bundler",

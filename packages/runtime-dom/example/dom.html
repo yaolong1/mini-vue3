@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="../dist/runtime-dom.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
+  <script>
+    const { createApp, h, reactive, toRefs } = MiniVue3RuntimeDOM
+
+    function useCounter() {
+      const data = reactive({ counter: 1 })
+      const add = () => {
+        data.counter++
+      }
+      return { add, ...toRefs(data) }
+
+    }
+
+    const APP = {
+      props: {
+        title: {
+          type: String
+        }
+      },
+      setup(props, ctx) {
+        const { add, counter } = useCounter()
+        return {
+          add,
+          counter
+        }
+      },
+      render(proxy) {
+        console.log(proxy._)
+        return h('div', { onClick: proxy.add }, [`${proxy.counter}`, proxy.title])
+      }
+    }
+    const app = createApp(APP, { title: 'test', a: "10" })
+    app.mount('#app')
+  </script>
+</body>
+
+</html>

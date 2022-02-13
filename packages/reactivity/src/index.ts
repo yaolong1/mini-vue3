@@ -6,7 +6,7 @@ export {
 } from "./reactive"
 
 
-export { effect } from './effect'
+export { effect,ReactiveEffect } from './effect'
 
 
 export { ref, shallowRef, toRef, toRefs } from './ref'
