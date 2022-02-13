@@ -1,5 +1,5 @@
-import { ReactiveEffect } from './../../reactivity/src/effect';
-import { reactive } from '@mini-vue3/reactivity';
+import { normalizeVNode, Text } from './createVNode';
+import { ReactiveEffect } from '@mini-vue3/reactivity';
 import { ShapeFlags } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
 
@@ -14,6 +14,21 @@ import { createComponentInstance, setupComponent } from './component';
  */
 export function createRenderer(renderOptions) {
 
+  //第三方平台的APi
+  const {
+    insert: hostInsert,
+    remove: hostRemove,
+    patchProp: hostPatchProp,
+    createElement: hostCreateElement,
+    createText: hostCreateText,
+    setText: hostSetText,
+    setElementText: hostSetElementText,
+    parentNode: hostParentNode,
+    nextSibling: hostNextSibling
+  } = renderOptions
+
+
+
   // 调用render函数用 把render函数放进ReactiveEffect中
   const setupRenderEffect = (initialVNode, instance, container) => {
     console.log('初始化调用render')
@@ -27,9 +42,13 @@ export function createRenderer(renderOptions) {
         // 渲染页面的时候响应式对象会取值,取值的时候会进行依赖收集 收集对应的effect
         // 当渲染完成之后，如果数据发生了改变会再次执行当前方法
         const subTree = instance.subTree = instance.render.call(proxy, proxy) //渲染调用h方法
+
+        // 真正开始渲染组件 即渲染subTree //前面的逻辑其实就是为了得到suTree,初始化组件实例为组件实例赋值之类的操作
+        patch(null, subTree, container)
         instance.isMounted = true
       } else {
         // 组件更新
+        console.log('组件更新逻辑')
       }
     }
 
@@ -59,6 +78,75 @@ export function createRenderer(renderOptions) {
       mountComponent(n2, container)
     } else {
       //组件的更新
+      console.log('组件 更新')
+    }
+  }
+
+
+
+  /**
+   * 挂载孩子
+   * @param container 
+   * @param children 
+   */
+  const mountChildren = (container, children) => {
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i] = normalizeVNode(children[i])
+      patch(null, child, container)
+    }
+  }
+
+  /**
+   * 挂载元素
+   * @param vnode 挂载的虚拟DOM
+   * @param container 
+   */
+  const mountElement = (vnode, container) => {
+    // vnode中的children永远只有两种情况：数组、字符串
+    // 如果vnode的children是一个对象或vnode则要被h函数转化为数组
+    // 所以children只有字符串和数组
+
+    const { type, props, shapeFlag, children } = vnode
+    let el = vnode.el = hostCreateElement(type)
+
+    // children是文本
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      hostSetElementText(el, children)
+
+      // children是数组
+    } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+      mountChildren(el, children)
+    }
+
+    //添加props
+    if (props) {
+      for (let key in props) {
+        hostPatchProp(el, key, null, props[key])
+      }
+    }
+
+    hostInsert(el, container)
+  }
+
+  const processElement = (n1, n2, container) => {
+    if (n1 == null) {
+      // 把n2转换为真实dom挂载到容器中
+      console.log('把n2变为真实dom挂载到container')
+      mountElement(n2, container)
+    } else {
+      // 更新
+      console.log('元素更新')
+    }
+  }
+
+
+  const processText = (n1, n2, container) => {
+    if (n1 == null) {
+      //创建一个文本节点 此时的n2.children是一个字符串
+      const textNode = hostCreateText(n2.children)
+      hostInsert(textNode, container)
+    } else {
+      console.log('Text更新')
     }
   }
 
@@ -71,10 +159,26 @@ export function createRenderer(renderOptions) {
   const patch = (n1, n2, container) => {
     if (n1 == n2) return; //新老节点相同不需要更新
 
-    const { shapeFlag } = n2
-    if (shapeFlag & ShapeFlags.COMPONENT) { //如果当前是一个组件的vnode
-      processComponent(n1, n2, container)
+    const { shapeFlag, type } = n2
+
+    switch (type) {
+      //normalizeVNode后的文本类型
+      case Text:
+        console.log('patch Text-------')
+        processText(n1, n2, container)
+        break;
+      default:
+        if (shapeFlag & ShapeFlags.COMPONENT) { //如果当前是一个组件的vnode
+          console.log('patch组件-------')
+          processComponent(n1, n2, container)
+        } else if (shapeFlag & ShapeFlags.ELEMENT) {
+          console.log('patch元素-------')
+          processElement(n1, n2, container)
+        }
     }
+
+
+
   }
 
 

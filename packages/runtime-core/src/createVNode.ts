@@ -30,3 +30,14 @@ export function createVNode(type, props, children = null) {
 }
 
 export const isVNode = (val) => !!val.__v_isVNode
+
+
+
+// 将h('xx',{},['s','b']) 孩子是字符的转为VNode的格式 正规化一下方便后续操作
+export const Text = Symbol()
+export const normalizeVNode = (vnode) => {
+  if (isObject(vnode)) {
+    return vnode
+  }
+  return createVNode(Text, null, String(vnode))
+}

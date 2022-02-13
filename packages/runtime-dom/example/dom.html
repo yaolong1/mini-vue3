@@ -19,6 +19,7 @@
       const data = reactive({ counter: 1 })
       const add = () => {
         data.counter++
+        console.log('xxx')
       }
       return { add, ...toRefs(data) }
 
@@ -39,7 +40,7 @@
       },
       render(proxy) {
         console.log(proxy._)
-        return h('div', { onClick: proxy.add }, [`${proxy.counter}`, proxy.title])
+        return h('div', { onClick: proxy.add }, [`${proxy.counter.value}`, proxy.title, h('h1', {}, 'sss')])
       }
     }
     const app = createApp(APP, { title: 'test', a: "10" })

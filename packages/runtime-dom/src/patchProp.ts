@@ -6,6 +6,13 @@ import { patchEvent } from "./modules/events"
 import { patchStyle } from "./modules/styles"
 
 //diff算法要用到来对比标签的属性
+/**
+ * 
+ * @param el 哪个el上的属性
+ * @param key patch的属性key
+ * @param prevValue 旧值
+ * @param nextValue 新值
+ */
 export const patchProp = (el, key, prevValue, nextValue) => {
   if (key === 'class') {
     //类变化的对比
