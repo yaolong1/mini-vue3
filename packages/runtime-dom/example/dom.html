@@ -46,8 +46,48 @@
       },
       render(proxy) {
 
-        const newNode = h('h1', { class: 'asd' }, 'a')
-        const oldNode = h('h1', {}, 'b')
+        // sync form start
+        // const children1 = [
+        //   h('li', { key: 'a' }, 'a'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c' }, 'c'),
+        // ]
+        // const children2 = [
+        //   h('li', { key: 'a' }, 'a'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c' }, 'c'),
+        //   h('li', { key: 'd' }, 'd'),
+        //   h('li', { key: 'e' }, 'e'),
+        // ]
+
+        // sync from end 
+        // const children1 = [
+        //   h('li', { key: 'a' }, 'a'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c' }, 'c'),
+        // ]
+        // const children2 = [
+        //   h('li', { key: 'd' }, 'd'),
+        //   h('li', { key: 'e' }, 'e'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c', style: { color: 'red' } }, 'c-new'),
+        // ]
+
+        //
+        const children1 = [
+          h('li', { key: 'a' }, 'a'),
+          h('li', { key: 'b' }, 'b'),
+          h('li', { key: 'c' }, 'c'),
+        ]
+
+        const children2 = [
+          h('li', { key: 'a' }, 'a'),
+          h('li', { key: 'b' }, 'b'),
+
+        ]
+        const oldNode = h('h1', {}, children1)
+        const newNode = h('h1', {}, children2)
+
 
         let vnode = this.flag.value ? oldNode : newNode
 

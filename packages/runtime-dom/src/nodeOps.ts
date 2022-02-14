@@ -1,7 +1,6 @@
 export const nodeOps = {
   //把child节点插入parent中anchor节点之前,anchor=null时相当于 parent.appendChild(child)
   insert: (child, parent, anchor = null) => {
-    console.log(child, parent)
     parent.insertBefore(child, anchor)
   },
   //删除child

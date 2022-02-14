@@ -1,5 +1,5 @@
 import { isObject, isArray } from '@mini-vue3/shared';
-import { createVNode, isVNode } from './createVNode';
+import { createVNode, isVNode } from './vnode';
 export function h(type, propsOrChildren, children) {
   // 两个参数
   // 写法1 h('div',{})
