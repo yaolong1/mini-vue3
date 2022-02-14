@@ -68,7 +68,7 @@ class RefImpl {
     if (hasChanged(newValue, this.rawValue)) {
       this.rawValue = newValue
       this._value = this.isShallow ? newValue : toReactive(newValue)
-      triggerRefValue(newValue)
+      triggerRefValue(this)
     }
   }
 }

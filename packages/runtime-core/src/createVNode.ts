@@ -31,6 +31,7 @@ export function createVNode(type, props, children = null) {
 
 export const isVNode = (val) => !!val.__v_isVNode
 
+export const isSameVNodeType = (n1, n2) => n1.type === n2.type && n1.key === n2.key
 
 
 // 将h('xx',{},['s','b']) 孩子是字符的转为VNode的格式 正规化一下方便后续操作

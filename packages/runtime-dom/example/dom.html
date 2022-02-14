@@ -13,7 +13,7 @@
   <script src="../dist/runtime-dom.global.js"></script>
   <script src="http://unpkg.com/vue"></script>
   <script>
-    const { createApp, h, reactive, toRefs } = MiniVue3RuntimeDOM
+    const { createApp, h, reactive, toRefs, ref } = MiniVue3RuntimeDOM
 
     function useCounter() {
       const data = reactive({ counter: 1 })
@@ -33,14 +33,25 @@
       },
       setup(props, ctx) {
         const { add, counter } = useCounter()
+        const flag = ref(true)
+
+        setTimeout(() => {
+          flag.value = !flag.value
+        }, 2000)
         return {
           add,
-          counter
+          counter,
+          flag
         }
       },
       render(proxy) {
-        console.log(proxy._)
-        return h('div', { onClick: proxy.add }, [`${proxy.counter.value}`, proxy.title, h('h1', {}, 'sss')])
+
+        const newNode = h('h1', { class: 'asd' }, 'a')
+        const oldNode = h('h1', {}, 'b')
+
+        let vnode = this.flag.value ? oldNode : newNode
+
+        return vnode
       }
     }
     const app = createApp(APP, { title: 'test', a: "10" })
