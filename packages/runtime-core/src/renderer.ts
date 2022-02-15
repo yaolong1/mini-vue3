@@ -291,7 +291,7 @@ export function createRenderer(renderOptions) {
         }
       }
 
-       //===========common sequence unmount==============
+      //===========common sequence unmount==============
       /**
        * 
        * 看i和e1的关系 如果i>e2说明老的children有多余的元素需要删除
@@ -322,9 +322,154 @@ export function createRenderer(renderOptions) {
         i++
       }
     }
-    console.log(e1, e2, i)
+
+    // unknown sequence
+    /**
+     * 如果序列是这样的形式
+     * 例子                    i=0
+     * c1 = a b c d   e f g   e1=6
+     * c2 = a b e c d h f g   e2=7
+     * 
+     * 最终比对完公共部分,剩下的序列就是未知序列
+     * 
+     * 
+     * 前序比对和后序比对完成后 此时的 i=2 e1=4 e2=5
+     * 
+     * 
+     * 
+     * c1 未知序列 c d e
+     * c2 未知序列 e c d h
+     * 
+     * c 和 d 可以复用 需要采用以下方法来进行删除或者新增
+     */
+
+    let s1 = i //标记c1未知序列的开始 [s1,e1] 代表老的孩子未知列表 
+    let s2 = i //标记c2未知序列的开始 [s2,e2] 代表新的孩子未知列表
+
+    // 根据新的节点制造一个映射表,用老的列表去映射表中挨个查,如果存在则复用（patch）,不存在就删除老的。最后多余的新的就是需要追加的
+
+    //映射表
+    const keyToNewIndexMap = new Map() //例子 {e:2,c:3,d:4,h:5}
+
+    for (let i = s2; i <= e2; i++) {
+      const child = c2[i]
+      keyToNewIndexMap.set(child.key, i)
+    }
+
+    // 新位置序列个数
+    const toBePatched = e2 - s2 + 1 //例子中的个数是4
+    // 创建一个数组长度为新节点个数，数组全部初始化为0,用于记录哪个是新增节点 和 将新的元素映射到老的元素的索引
+    const newIndexToOldMapIndex = new Array(toBePatched).fill(0) // [5,3,4,0] // 算法最长递增子序列会用到这个数组映射表
+
+    //拿老序列到新序列映射表中查找
+    for (let i = s1; i <= e1; i++) {
+      const prevChild = c1[i]
+      const newIndex = keyToNewIndexMap.get(prevChild.key)
+      if (newIndex) { //新的里面有老的说明需要复用patch
+        // 1、保证不是0,是0就是新增元素 2、将新的元素映射到老的元素的索引  新的索引= s2+当前数组的索引 老的索引 = newIndexToOldMapIndex[当前数组索引]
+        /**
+         * 例子
+         * 假如 newIndexToOldMapIndex = [2,3,4,0] 
+         * 新索引  旧索引
+         *  0+s2    2
+         *  1+s2    3
+         *  1+s2    4
+         */
+        newIndexToOldMapIndex[newIndex - s2] = i + 1
+
+        // 填表后需要patch两个相同元素 (复用el n1.el=n2.el 后续插入的时候直接复用提高性能)
+        patch(prevChild, c2[newIndex], container)
+
+      } else {  //需要删除老的
+        unmount(prevChild)
+      }
+    }
+
+    const queue = getSequence(newIndexToOldMapIndex) //得到newIndexToOldMapIndex 的最长递增子序列的索引
+
+    let j = queue.length - 1 //[1,2] newIndexToOldMapIndex索引列表 也就是对应的 [3,4]不需要移动
+
+    // 倒叙插入新增的元素
+    for (let i = toBePatched - 1; i >= 0; i--) {
+      const lastIndex = i + s2 // 插入元素的索引
+      const lastChild = c2[lastIndex] // 当前要插入的元素
+      const nextPos = lastIndex + 1 // 当前插入元素的下一个元素
+      const anchor = nextPos < c2.length ? c2[nextPos].el : null
+
+      if (newIndexToOldMapIndex[i] === 0) { // 还没有真实节点需要创建真实节点
+        patch(null, lastChild, container, anchor)
+      } else {
+        //直接复用el插入，此时的el已经有值了因为在#381行已经patch复用过了
+        //此处直接插入会导致重复的更新dom节点  消耗性能
+        // hostInsert(lastChild.el, container, anchor)
+
+        /**
+         * 例子
+         * c1 = a b [c d e  ] f g  
+         * c2 = a b [e c d h] f g 
+         * 
+         * 最终序列 a b [e c d h] f g
+         *  e c d h 都插入了一遍  事实上[c d]两个节点不需要移动
+         * 
+         * 相对于原序列[c d e]而言 我们可以直接把e 插入到c前面不就行了吗 --->使用最长递增子序列 减少dom插入操作
+         *  
+         */
+
+        //如果当前索引和 newIndexToOldMapIndex的索引的最大递增子序列不等 说明当前的元素需要插入
+        // i = [3 2 1 0] queue=[2 1]  索引是倒叙的  相同的就不需要移动 不同才移动 
+        if (i !== queue[j]) {
+          hostInsert(lastChild.el, container, anchor)
+        } else {
+          j-- // 这里做了个优化，表示不需要移动
+        }
+
+
+      }
+    }
   }
 
+
+  // https://en.wikipedia.org/wiki/Longest_increasing_subsequence
+  function getSequence(arr: number[]): number[] {
+    const p = arr.slice()
+    const result = [0]
+    let i, j, u, v, c
+    const len = arr.length
+    for (i = 0; i < len; i++) {
+      const arrI = arr[i]
+      if (arrI !== 0) {
+        j = result[result.length - 1]
+        if (arr[j] < arrI) {
+          p[i] = j
+          result.push(i)
+          continue
+        }
+        u = 0
+        v = result.length - 1
+        while (u < v) {
+          c = (u + v) >> 1
+          if (arr[result[c]] < arrI) {
+            u = c + 1
+          } else {
+            v = c
+          }
+        }
+        if (arrI < arr[result[u]]) {
+          if (u > 0) {
+            p[i] = result[u - 1]
+          }
+          result[u] = i
+        }
+      }
+    }
+    u = result.length
+    v = result[u - 1]
+    while (u-- > 0) {
+      result[u] = v
+      v = p[v]
+    }
+    return result
+  }
 
   /**
    * 更新孩子
@@ -356,6 +501,7 @@ export function createRenderer(renderOptions) {
           //diff
           patchKeyedChildren(c1, c2, el)
         } else {
+          //卸载旧孩子
           unmountChildren(c1)
         }
       } else {

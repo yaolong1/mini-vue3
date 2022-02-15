@@ -1,5 +1,18 @@
 export const nodeOps = {
   //把child节点插入parent中anchor节点之前,anchor=null时相当于 parent.appendChild(child)
+  //例子
+  /**
+   * 元素 [a,b,c,d,e]
+   * 
+   * insert(a,父级元素,e)
+   * 插入后的元素 [b,c,d,a,e]
+   * 
+   *  insert(a,父级元素)
+   *  插入后的元素 [b,c,d,a]
+   * 
+   *  insert(h,父级元素)
+   *  插入后的元素 [a,b,c,d,e,h]
+   */
   insert: (child, parent, anchor = null) => {
     parent.insertBefore(child, anchor)
   },
