@@ -422,8 +422,6 @@ export function createRenderer(renderOptions) {
         } else {
           j-- // 这里做了个优化，表示不需要移动
         }
-
-
       }
     }
   }
