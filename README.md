@@ -2,14 +2,15 @@
 
 #### 介绍
 
-实现的迷你版 vue3。
-已实现：
-① reactivity: 响应式 APi computed ref toRefs toRef reactive effect readonly shallowReadonly shallowReactive
-② runtime-dom: createApp
-③ runtime-core: createRender (包含 diff 算法)
-未实现:
-compiler-core
-compiler-dom
+迷你版 vue3 (带详细注释)
+
+- 已实现：
+  - ① reactivity: 响应式 APi computed ref toRefs toRef reactive effect readonly shallowReadonly shallowReactive
+  - ② runtime-dom: createApp
+  - ③ runtime-core: createRender (包含 diff 算法)
+- 未实现:
+  - ① compiler-core
+  - ② compiler-dom
 
 #### 使用说明
 
