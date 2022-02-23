@@ -94,13 +94,13 @@ function cleanupEffect(effect) {
   for (let dep of deps) {
     dep.delete(effect) //挨个清除与当前的实例绑定的dep
   }
+  deps.length = 0
 }
 
 export class ReactiveEffect {
   active = true //是否是响应式的effect
   deps = [] // 让effect记录那些属性依赖了，同时要记录当前属性依赖了哪个effect
   constructor(public fn, public scheduler = null) {
-
   }
 
   run() {
@@ -111,6 +111,7 @@ export class ReactiveEffect {
     if (!effectStack.includes(this)) {
       try {
         effectStack.push(activeEffect = this)
+        cleanupEffect(this)
         return this.fn()
       } finally {
         effectStack.pop()
@@ -272,7 +273,9 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
         add(depsMap.get('length'))
       }
   }
-  triggerEffects(effects)
+
+  const effectsFn = new Set(effects)
+  triggerEffects(effectsFn)
 }
 
 export function triggerEffects(dep) {

@@ -1,4 +1,5 @@
 export const isObject = (value) => typeof value === 'object' && value !== null
+export const isUndefined = (value) => typeof value === 'undefined'  
 
 //继承对象
 export const extend = Object.assign

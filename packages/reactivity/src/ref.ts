@@ -100,7 +100,8 @@ export function trackRefValue(ref) {
 }
 
 export function triggerRefValue(ref) {
-  const dep = ref.dep
-  triggerEffects(dep)
+  debugger
+  const depFn = new Set(ref.dep)
+  triggerEffects(depFn)
 }
 

@@ -427,47 +427,95 @@ export function createRenderer(renderOptions) {
   }
 
 
-  // https://en.wikipedia.org/wiki/Longest_increasing_subsequence
   function getSequence(arr: number[]): number[] {
-    const p = arr.slice()
-    const result = [0]
-    let i, j, u, v, c
-    const len = arr.length
-    for (i = 0; i < len; i++) {
-      const arrI = arr[i]
+    let result = [0] // 存的是最长递增子序列的索引
+    let len = arr.length
+    let p = arr.slice(0) //用于记录当前节点索引对应的前驱节点索引
+    let start
+    let end
+    let middle
+    for (let i = 0; i < len; i++) {
+      let arrI = arr[i] //当前的值
       if (arrI !== 0) {
-        j = result[result.length - 1]
-        if (arr[j] < arrI) {
-          p[i] = j
+        let lastIndex = result[result.length - 1]
+        if (arrI > arr[lastIndex]) { //如果当前值比结果索引最后一个大就直接push
+          p[i] = lastIndex
           result.push(i)
           continue
         }
-        u = 0
-        v = result.length - 1
-        while (u < v) {
-          c = (u + v) >> 1
-          if (arr[result[c]] < arrI) {
-            u = c + 1
+
+        //2.如果当前的值比结果索引最后一个元素小，说明当前值是有潜力的，需要替换:通过二分法找出第一个比当前值大的，替换掉它
+        start = 0
+        end = arr.length - 1
+        while (start < end) {
+          middle = (end + start) / 2 | 0 //向下取整 1.5 = 1
+          if (arrI > arr[middle]) {
+            start = middle + 1
           } else {
-            v = c
+            end = middle
           }
         }
-        if (arrI < arr[result[u]]) {
-          if (u > 0) {
-            p[i] = result[u - 1]
-          }
-          result[u] = i
+
+        if (arr[result[start]] > arrI) {
+          p[i] = result[start - 1]
+          result[start] = i // 覆盖掉第一个比arrI大的
         }
       }
+
     }
-    u = result.length
-    v = result[u - 1]
-    while (u-- > 0) {
-      result[u] = v
-      v = p[v]
+    let i = result.length //拿到最后一个开始向前追溯
+    let last = result[i - 1] //取出最后一个
+
+    while (i-- > 0) {
+      result[i] = last
+      last = p[last]
     }
+
     return result
+
   }
+
+  // https://en.wikipedia.org/wiki/Longest_increasing_subsequence
+  // function getSequence(arr: number[]): number[] {
+  //   const p = arr.slice()
+  //   const result = [0]
+  //   let i, j, u, v, c
+  //   const len = arr.length
+  //   for (i = 0; i < len; i++) {
+  //     const arrI = arr[i]
+  //     if (arrI !== 0) {
+  //       j = result[result.length - 1]
+  //       if (arr[j] < arrI) {
+  //         p[i] = j
+  //         result.push(i)
+  //         continue
+  //       }
+  //       u = 0
+  //       v = result.length - 1
+  //       while (u < v) {
+  //         c = (u + v) >> 1
+  //         if (arr[result[c]] < arrI) {
+  //           u = c + 1
+  //         } else {
+  //           v = c
+  //         }
+  //       }
+  //       if (arrI < arr[result[u]]) {
+  //         if (u > 0) {
+  //           p[i] = result[u - 1]
+  //         }
+  //         result[u] = i
+  //       }
+  //     }
+  //   }
+  //   u = result.length
+  //   v = result[u - 1]
+  //   while (u-- > 0) {
+  //     result[u] = v
+  //     v = p[v]
+  //   }
+  //   return result
+  // }
 
   /**
    * 更新孩子

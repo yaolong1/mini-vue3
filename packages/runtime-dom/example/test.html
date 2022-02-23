@@ -10,14 +10,30 @@
 
 <body>
 
-  <div id="app">
-    <li id="li1">1</li>
-    <li id="li2">2</li>
-    <li id="li3">3</li>
-  </div>
-
-  <!-- <script src="../dist/runtime-dom.global.js"></script> -->
+  <script src="../dist/runtime-dom.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
   <script>
+    // const { effect, reactive, ref, computed, watch } = Vue
+    const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
+
+    const flag = reactive({ value: true })
+    // const computedFlag = computed(() => flag.value)
+    // const data = reactive({ msg: '我是branch true' })
+
+    // effect(() => {
+    //   if (computedFlag.value) {
+    //     console.log(data.msg)
+    //   } else {
+    //     console.log('false branch')
+    //   }
+    // })
+    watch(flag, (oldValue, newValue) => {
+      console.log('新值', newValue)
+      console.log('旧值', oldValue)
+    }, {
+      flush: 'post',
+      immediate: true
+    })
 
   </script>
 </body>
