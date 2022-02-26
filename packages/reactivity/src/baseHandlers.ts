@@ -40,8 +40,6 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
       return target
     }
 
-
-    debugger
     const res = Reflect.get(target, key, receiver)
 
 
@@ -75,12 +73,10 @@ function createSetter(isShallow = false) { //拦截对象设置
 
     let oldValue = target[key]
 
-
-    if (!isShallow && !isReadonly(value)) {
-      value = toRaw(value) //这里一定要把对象转换为原对象，如果value是响应式对象后续Reflect.set设置值的时候也会设置成为响应式,后续操作会产生死循环（这个理解有点牵强，不过确实需要转成普通对象,如果是原型赋值时就会出现循环）
-      oldValue = toRaw(oldValue)
-    }
-    debugger
+    // if (!isShallow && !isReadonly(value)) {
+    //   value = toRaw(value) //这里一定要把对象转换为原对象，如果value是响应式对象后续Reflect.set设置值的时候也会设置成为响应式,后续操作会产生死循环（这个理解有点牵强，不过确实需要转成普通对象,如果是原型赋值时就会出现循环）
+    //   oldValue = toRaw(oldValue)
+    // }
     const hadKey = (isArray(target) && isIntegerKey(key)) ? key < target.length : hasOwn(target, key)
     const res = Reflect.set(target, key, value, receiver)
     //代理对象变为原型对象后和当前的target相等，说明当前访问的不是原型链上的属性需要触发更新  
@@ -122,7 +118,6 @@ const shallowReadonlyGet = createGetter(true, true);
  */
 // 为什么ownKeys拦截函数没有key这个参数? 例如for...in 操作是没有针对某一个key做操作，而是整个对象所以参数只有target
 function ownKeys(target) {
-  debugger
   track(target, TrackOpTypes.ITERATE, isArray(target) ? 'length' : ITERATE_KEY) //这种情况需要收集依赖
   return Reflect.ownKeys(target)
 }

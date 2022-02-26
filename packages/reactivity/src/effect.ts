@@ -161,7 +161,6 @@ const targetMap = new WeakMap() //使用weakMap保存响应式对象所依赖的
  * @returns 
  */
 export function track(target, trackOpType, key) {
-  console.log('当前访问属性', key,'操作',trackOpType)
   //每次访问都收集吗？ activeEffect（当前的effect）为空时不收集
   //例子：
   // const test = reactive({name: 'xxx'})
@@ -199,10 +198,6 @@ export function track(target, trackOpType, key) {
   }
   //收集
   trackEffects(dep)
-  console.log(`开启收集依赖-收集当前属性:`, key, '\n effect:', activeEffect)
-
-  console.log('deps', key, activeEffect.deps)
-  console.log('targetMap', targetMap)
 }
 
 
@@ -283,7 +278,6 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
     if (key !== void 0) {
       add(depsMap.get(key))
     }
-    console.log('set key', key)
     switch (type) {
 
       case TriggerOpTypes.ADD:

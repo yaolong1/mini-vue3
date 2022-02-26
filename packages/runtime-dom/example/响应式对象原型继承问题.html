@@ -19,8 +19,8 @@
   const proto = { a: 1 } //原型
   const parent = reactive(proto)
   const child = reactive(obj)
-  // child.__proto__ = parent
-  Object.setPrototypeOf(child, parent)
+  child.__proto__ = parent
+  // Object.setPrototypeOf(child, parent)
   console.log(child)
   effect(() => {
     console.log(child.a)
