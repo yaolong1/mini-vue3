@@ -74,9 +74,11 @@ function createSetter(isShallow = false) { //拦截对象设置
     let oldValue = target[key]
 
     // if (!isShallow && !isReadonly(value)) {
-    //   value = toRaw(value) //这里一定要把对象转换为原对象，如果value是响应式对象后续Reflect.set设置值的时候也会设置成为响应式,后续操作会产生死循环（这个理解有点牵强，不过确实需要转成普通对象,如果是原型赋值时就会出现循环）
+    //   value = toRaw(value)
     //   oldValue = toRaw(oldValue)
     // }
+
+    
     const hadKey = (isArray(target) && isIntegerKey(key)) ? key < target.length : hasOwn(target, key)
     const res = Reflect.set(target, key, value, receiver)
     //代理对象变为原型对象后和当前的target相等，说明当前访问的不是原型链上的属性需要触发更新  
