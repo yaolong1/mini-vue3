@@ -196,8 +196,27 @@ export function track(target, trackOpType, key) {
     // let b = () => {console.log('xx')}
     //set.add(a) set.add(a)  =》 set = {() => {console.log('xx'),() => {console.log('xx')}
   }
+
+
   //收集
   trackEffects(dep)
+
+
+  /**不能在track里面打印targetMap有可能会出现死循环
+   *    const obj = {}
+        const proto = { a: 1 } //原型
+        const parent = reactive(proto)
+        const child = reactive(obj)
+        // child.__proto__ = parent
+        Object.setPrototypeOf(child, parent)
+        console.log(child)
+        effect(() => {
+          console.log(child.a)
+        })
+        child.a = 2
+   */
+  // console.log(targetMap)  
+
 }
 
 
@@ -244,6 +263,8 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
     }
   }
 
+  console.log('修改的key', key)
+  debugger
   //看看是不是修改的数组的长度，修改数组的长度影响比较大
   if (key === 'length' && isArray(target)) {
     //这里的逻辑是当前的key是操作数组的长度时的逻辑，需要将当前target数组的所有和长度相关的依赖都添加到effect = new Set集合中执行
@@ -322,9 +343,10 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
         break
     }
 
+  }
+  
     //此处的createDep是为了和cleanupEffect配合，直接重新创建一个引用避免循环执行
     triggerEffects(createDep(effects))
-  }
 }
 
 export function triggerEffects(dep) {

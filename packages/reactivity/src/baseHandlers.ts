@@ -63,6 +63,7 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
       return isReadOnly ? readonly(res) : reactive(res)
     }
 
+
     return res
 
   }
@@ -78,7 +79,7 @@ function createSetter(isShallow = false) { //拦截对象设置
     //   oldValue = toRaw(oldValue)
     // }
 
-    
+
     const hadKey = (isArray(target) && isIntegerKey(key)) ? key < target.length : hasOwn(target, key)
     const res = Reflect.set(target, key, value, receiver)
     //代理对象变为原型对象后和当前的target相等，说明当前访问的不是原型链上的属性需要触发更新  
@@ -153,6 +154,10 @@ function deleteProperty(target, key) {
 let readOnlyObj = {
   set: (target, key, value) => {
     console.warn(`readonly api 不能设置目标值${key}为${value}`)
+  },
+  deleteProperty(target, key) {
+    console.warn(`readonly api 不能删除目标属性${key}`)
+    return true
   }
 }
 
