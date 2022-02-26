@@ -1,7 +1,8 @@
-import { isIntegerKey } from '@mini-vue3/shared';
+import { isIntegerKey, isSymbol } from '@mini-vue3/shared';
 import { isArray } from '@mini-vue3/shared';
+import { ITERATE_KEY } from './baseHandlers';
+import { createDep } from './dep';
 import { TriggerOpTypes } from './operators';
-
 
 
 let activeEffect
@@ -111,6 +112,25 @@ export class ReactiveEffect {
     if (!effectStack.includes(this)) {
       try {
         effectStack.push(activeEffect = this)
+
+
+        /**
+         * cleanupEffect在执行之前先清除掉当前的effect的deps防止出现以下情况
+         *  const flag = reactive({ value: true })
+            const data = reactive({ msg: '我是branch true' })
+  
+            effect(() => {
+              if (flag.value) {
+                console.log(data.msg)
+              } else {
+                console.log('false branch')
+              }
+            })
+  
+            flag.value = false 
+  
+            上述例子如果flag.value 的值变成了false后，此时我们修改data.msg的值也会触发effect，为了避免一些不需要的依赖触发，在执行effect函数之前要清除当前effect函数中响应式变量所依赖的dep
+         */
         cleanupEffect(this)
         return this.fn()
       } finally {
@@ -141,7 +161,7 @@ const targetMap = new WeakMap() //使用weakMap保存响应式对象所依赖的
  * @returns 
  */
 export function track(target, trackOpType, key) {
-  console.log('当前访问属性', key)
+  console.log('当前访问属性', key,'操作',trackOpType)
   //每次访问都收集吗？ activeEffect（当前的effect）为空时不收集
   //例子：
   // const test = reactive({name: 'xxx'})
@@ -158,7 +178,7 @@ export function track(target, trackOpType, key) {
 
   let dep = depsMap.get(key)
   if (!dep) {
-    depsMap.set(key, (dep = new Set))
+    depsMap.set(key, (dep = createDep()))
     // 用Set的原因： 不使用Array的原因是因为一个effect函数中可能出现多个相同属性使用set去重
     // effect(() => {
     //   state.age + state.age
@@ -258,26 +278,62 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
         add(dep)
       }
     });
-  }
+  } else {
+    //可能是对象   void 0 代表 undefined 好处是void 0为6字节 undefined为9字节 
+    if (key !== void 0) {
+      add(depsMap.get(key))
+    }
+    console.log('set key', key)
+    switch (type) {
 
-  //修改
-  if (!(key === undefined)) {
-    add(depsMap.get(key))
-  }
+      case TriggerOpTypes.ADD:
+        //对象的特殊触发情况
+        /**
+         * const data = reactive({ key1: 'key1', key2: 'key2', key3: 'key3' })
+            effect(() => {
+              for (const key in data) {
+                console.log(key)
+              }
+            })
+            data.key4 = 'key4' // 当添加属性的时候，直接将key为iterate_key的依赖取到放进要执行的effects中
+         */
+        if (!isArray(target)) {
+          add(depsMap.get(ITERATE_KEY))
 
-  //如果是修改数组中的某一个索引
-  switch (type) {
-    case TriggerOpTypes.ADD:
-      //如果数组新增了索引直接找长度的dep
-      if (isArray(target) && isIntegerKey(key)) {
-        add(depsMap.get('length'))
-      }
-  }
+          /**
+           * 如果是修改数组中的某一个索引，即数组新增了索引直接找长度的dep
+           * 例子
+           * const data = reactive({arr:[1,2,3]})
+           * effect(() =>{
+           *    data.arr //此处会调用getter方法key为length
+           * })
+           * 
+           * data.arr[10] = 6 //此时如果修改的索引大于arr的最大索引就需要重新执行length对应的dep以此来达到数组的响应式
+           * 
+           */
+        } else if (isIntegerKey(key)) {
+          add(depsMap.get('length'))
+        }
+        break
+      case TriggerOpTypes.DELETE:
+        //删除对象的特殊情况
+        if (!isArray(target)) {
+          add(depsMap.get(ITERATE_KEY)) // for...in
+        }
+        break
+      case TriggerOpTypes.SET:
+        if (!isArray(target)) {
+          add(depsMap.get(ITERATE_KEY)) // for...in
+        }
+        break
+    }
 
-  const effectsFn = new Set(effects)
-  triggerEffects(effectsFn)
+    //此处的createDep是为了和cleanupEffect配合，直接重新创建一个引用避免循环执行
+    triggerEffects(createDep(effects))
+  }
 }
 
 export function triggerEffects(dep) {
-  dep.forEach((effect: any) => effect !== activeEffect && (effect.scheduler ? effect.scheduler() : effect.run()))
+  //effect !== activeEffect 解决在effect中修改响应式变量导致的无限循环
+  dep.forEach((effect: any) => activeEffect != effect && (effect.scheduler ? effect.scheduler() : effect.run()))
 }

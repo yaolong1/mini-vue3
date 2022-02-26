@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>响应式对象原型继承问题</title>
+</head>
+
+<body>
+  <div id="app"></div>
+
+</body>
+<script src="../dist/runtime-dom.global.js"></script>
+<script>
+  const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
+  const obj = {}
+  const proto = { a: 1 } //原型
+  const parent = reactive(proto)
+  const child = reactive(obj)
+  // child.__proto__ = parent
+  Object.setPrototypeOf(child, parent)
+  console.log(child)
+  effect(() => {
+    console.log(child.a)
+  })
+  child.a = 2
+
+</script>
+
+</html>

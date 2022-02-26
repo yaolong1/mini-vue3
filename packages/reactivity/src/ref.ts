@@ -1,4 +1,5 @@
 import { hasChanged, isArray, isObject } from "@mini-vue3/shared"
+import { createDep } from "./dep"
 import { isTracking, track, trackEffects, trigger, triggerEffects } from "./effect"
 import { TrackOpTypes, TriggerOpTypes } from "./operators"
 import { reactive, toReactive } from "./reactive"
@@ -100,8 +101,10 @@ export function trackRefValue(ref) {
 }
 
 export function triggerRefValue(ref) {
-  debugger
-  const depFn = new Set(ref.dep)
-  triggerEffects(depFn)
+  //此处的createDep是为了和cleanupEffect配合，直接重新创建一个引用避免循环执行
+  triggerEffects(createDep(ref.dep))
 }
 
+export const isRef = (val) => {
+  return !!val.__v_isRef
+}

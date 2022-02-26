@@ -10,9 +10,9 @@ import { isFunction, isObject } from '@mini-vue3/shared';
  * @param options 参数
  */
 export function watch(source, cb, options) {
-  let job
-  let getter
-  let scheduler
+  let getter // 保存观察的目标对象的访问函数，供ReactiveEffect使用
+  let cleanup //用于保存过期的回调函数
+
 
   //如果是函数就直接说明是指定了访问的属性
   if (isFunction(source)) {
@@ -21,15 +21,33 @@ export function watch(source, cb, options) {
     // 是对象,说明当前的的对象的所有属性都需要监听，直接递归
     getter = () => traverse(source)
   }
+
+
+  /**
+   * 
+   * @param fn 过期的回调函数
+   */
+  function onInvalidDate(fn) {
+    cleanup = fn
+  }
+
+
   let newValue, oldValue
 
-  job = () => {
+  const job = () => {
+    //执行effect获取新的值
     newValue = effect.run()
-    cb(oldValue, newValue)
+
+    if (cleanup) {
+      cleanup()
+    }
+
+    cb(oldValue, newValue, onInvalidDate)
+    //当watch触发完后新值就变成了旧值
     oldValue = newValue
   }
 
-  scheduler = () => {
+  const scheduler = () => {
     if (options && options.flush === 'post') {
       //组件更新之后执行
       console.log('post 组件更新之后执行')
@@ -50,6 +68,7 @@ export function watch(source, cb, options) {
   if (options && options.immediate) {
     job()
   } else {
+    // 没运行job之前需要执行一次用于手机依赖，并把初始值（直接执行的effect.run()就是初始值）设置为老值
     oldValue = effect.run()
   }
 }
