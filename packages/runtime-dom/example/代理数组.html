@@ -148,8 +148,15 @@
      *    if(!shouldTrack && activeEffect !== undefined) return 
      * }
      */
-   
-     // splice、pop、unshift、shift等操作都是属于隐式的修改数组长度的原型方法所以都需要做拦截处理，逻辑和push操作是一样的
+
+    // splice、pop、unshift、shift等操作都是属于隐式的修改数组长度的原型方法所以都需要做拦截处理，逻辑和push操作是一样的
+    // const arr = reactive([1, 2, 3])
+    // effect(() => {
+    //   arr.unshift(-1)
+    // })
+    // effect(() => {
+    //   arr.unshift(0)
+    // })
 
   </script>
 </body>

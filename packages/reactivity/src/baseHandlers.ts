@@ -78,7 +78,6 @@ function createInstrumentations() {
   })
 
   return instrumentations
-
 }
 
 function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获取
