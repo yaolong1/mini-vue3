@@ -13,12 +13,41 @@
   <script>
     const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
 
-    const data = reactive([0])
+    // for....in
+    // const data = reactive([0])
+    // effect(() => {
+    //   for (const key in data) { //会走 ownKeys 拦截
+    //     console.log(key)
+    //   }
+    // })
+    // data[2] = 10
+    // console.log(data)
+
+    // for....of
+    // const obj = {
+    //   val: 1,
+    //   [Symbol.iterator]() {
+    //     return {
+    //       next() {
+    //         return {
+    //           value: obj.val++,
+    //           done: obj.val > 10 ? true : false
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+    // for (const val of obj) {
+    //   console.log(val)
+    // }
+    const arr = reactive([1, 2, 3, 4, 5])
+
     effect(() => {
-      console.log(data.length)
+      for (const val of arr) {
+        console.log(val)
+      }
     })
 
-    data.length = 10
   </script>
 </body>
 

@@ -264,7 +264,6 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
   }
 
   console.log('修改的key', key)
-  debugger
   //看看是不是修改的数组的长度，修改数组的长度影响比较大
   if (key === 'length' && isArray(target)) {
     //这里的逻辑是当前的key是操作数组的长度时的逻辑，需要将当前target数组的所有和长度相关的依赖都添加到effect = new Set集合中执行
@@ -290,14 +289,14 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
               }, 2000)
        * 
        */
-      if (key === 'length' || String(key) >= newValue) {
+      if (key === 'length' || key >= newValue) {
         add(dep)
       }
     });
   } else {
-    //可能是对象   void 0 代表 undefined 好处是void 0为6字节 undefined为9字节 
+    //   void 0 代表 undefined 好处是void 0为6字节 undefined为9字节 
     if (key !== void 0) {
-      add(depsMap.get(key))
+      add(depsMap.get(key)) // 拿到当前key的依赖放进要执行effects中 --此逻辑是修改值的公共逻辑（无论是修改数组还是修改对象）
     }
     switch (type) {
 
@@ -316,7 +315,7 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
           add(depsMap.get(ITERATE_KEY))
 
           /**
-           * 如果是修改数组中的某一个索引，即数组新增了索引直接找长度的dep
+           * 如果是修改数组中的某一个索引，即数组新增了索引直接找length的dep
            * 例子
            * const data = reactive({arr:[1,2,3]})
            * effect(() =>{
@@ -333,20 +332,20 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
       case TriggerOpTypes.DELETE:
         //删除对象的特殊情况
         if (!isArray(target)) {
-          add(depsMap.get(ITERATE_KEY)) // for...in
+          add(depsMap.get(ITERATE_KEY))
         }
         break
       case TriggerOpTypes.SET:
         if (!isArray(target)) {
-          add(depsMap.get(ITERATE_KEY)) // for...in
+          add(depsMap.get(ITERATE_KEY))
         }
         break
     }
 
   }
-  
-    //此处的createDep是为了和cleanupEffect配合，直接重新创建一个引用避免循环执行
-    triggerEffects(createDep(effects))
+
+  //此处的createDep是为了和cleanupEffect配合，直接重新创建一个引用避免循环执行
+  triggerEffects(createDep(effects))
 }
 
 export function triggerEffects(dep) {
