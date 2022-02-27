@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代理是Set、Map对象</title>
+</head>
+
+<body>
+  <script src="../dist/runtime-dom.global.js"></script>
+  <script>
+    const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
+    const s = new Set
+    let data = reactive(s)
+    let p1 = reactive({ a: 1 })
+    effect(() => {
+      console.log(data.size)
+    })
+    data.add(p1)
+
+  </script>
+</body>
+
+</html>

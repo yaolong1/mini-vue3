@@ -9,6 +9,24 @@ export const isIntegerKey = (key) => parseInt(key) + "" === key
 const hasOwnProperty = Object.prototype.hasOwnProperty
 export const hasOwn = (target, key) => hasOwnProperty.call(target, key)
 
+
+const objectToString = Object.prototype.toString
+//获取对象的字符串。[Object rawType]
+export function toTypeString(value) {
+  return objectToString.call(value) //return[Object rawType]
+}
+
+/**
+ * 拿到对象的 rawType 
+ * [Object Object]    rawType=object
+ * @param value 原对象
+ * @returns rawType
+ */
+export function toRawType(value) {
+  return toTypeString(value).slice(8, -1)
+}
+
+
 /**
  * 
  * 由于 === 不严格 当 newValue: NaN === oldValue:NaN 时 是为false的  使用Object.is(NaN,NaN) 为true   更加严格
