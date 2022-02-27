@@ -19,6 +19,30 @@ const builtInSymbols = new Set(
 
 const isNonTrackableKeys = makeMap(`__proto__,__v_isRef,__isVue`)
 
+
+
+//数组重写的方法对象
+const arrayInstrumentations = createInstrumentations()
+
+function createInstrumentations() {
+  const instrumentations: Record<string, Function> = {}
+
+    //数组的查找类方法
+    ; (['indexOf', 'includes', 'lastIndexOf'] as const).forEach(key => {
+      const originMethod = Array.prototype[key] // 拿到原型上的方法
+      instrumentations[key] = function (this, ...args) {
+        let res = originMethod.apply(this, args)
+        if (res === -1 || res === false) {
+          res = originMethod.apply(this[ReactiveFlags.RAW], args)
+        }
+        return res
+      }
+    });
+
+  return instrumentations
+
+}
+
 function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获取
   return function get(target, key, receiver) {
 
@@ -40,15 +64,22 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
       return target
     }
 
+    /**
+     * 如果当前的操作对象时数组，并且操作的属性是一个重写的方法,就走自定义的重写方法的逻辑
+     */
+    if (!isReadOnly && isArray(target) && hasOwn(arrayInstrumentations, key)) {
+      return Reflect.get(arrayInstrumentations, key, receiver)
+    }
+
     const res = Reflect.get(target, key, receiver)
 
+    console.log('当前访问的key', key)
 
     // 当使用for...of循环时，他们都会读取数组的Symbol.iterator属性。
     // 此属性是一个symbol值，为了避免发生意外的错误, 以及性能的考虑，不应该和副作用函数建立联系, 因此需要过滤掉  《vue.js 设计与实现 --霍春阳》 #123页
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
     }
-    console.log('当前访问的key', key)
     if (!isReadOnly) {
       //不是只读收集依赖
       track(target, TrackOpTypes.GET, key)
@@ -122,7 +153,6 @@ const shallowReadonlyGet = createGetter(true, true);
  */
 // 为什么ownKeys拦截函数没有key这个参数? 例如对象和数组的for...in 操作是没有针对某一个key做操作，而是整个对象所以参数只有target
 function ownKeys(target) {
-  debugger
   // 如果当前操作的对象时数组时直接用length为依赖的key名称，因为操作数组都要改变数组长度
   track(target, TrackOpTypes.ITERATE, isArray(target) ? 'length' : ITERATE_KEY) //这种情况需要收集依赖
   return Reflect.ownKeys(target)
@@ -136,8 +166,12 @@ function ownKeys(target) {
  */
 function has(target, key) {
   const ret = Reflect.has(target, key)
-  track(target, TrackOpTypes.HAS, key)
-  console.log('has')
+
+  // Symbol不收集
+  if (!isSymbol(key) || !builtInSymbols.has(key)) {
+    track(target, TrackOpTypes.HAS, key)
+    console.log('has')
+  }
   return ret
 }
 

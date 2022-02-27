@@ -25,7 +25,6 @@ export function shallowReadonly(target) {
 
 
 //WeakMap只能用对象作为key,并且会自动垃圾回收，不会造成内存泄漏
-//
 export const readonlyMap = new WeakMap()
 export const reactiveMap = new WeakMap()
 export const shallowReadonlyMap = new WeakMap()
