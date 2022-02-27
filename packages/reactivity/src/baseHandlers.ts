@@ -1,8 +1,7 @@
 import { extend, hasChanged, hasOwn, isArray, isIntegerKey, isObject, isSymbol, makeMap } from "@mini-vue3/shared"
-import { track, trigger } from "./effect"
+import { enableTracking, pauseTracking, track, trigger } from "./effect"
 import { TrackOpTypes, TriggerOpTypes } from "./operators"
-import { isReadonly, reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonly, shallowReadonlyMap, toRaw } from "./reactive"
-import { isRef } from "./ref"
+import { reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap, toRaw } from "./reactive"
 //实现响应式
 
 //是否仅读 仅读报warn
@@ -38,6 +37,45 @@ function createInstrumentations() {
         return res
       }
     });
+
+  ; (['push','pop','shift','unshift','splice'] as const).forEach(key => {
+    const originMethod = Array.prototype[key] // 拿到原型上的方法
+    instrumentations[key] = function (this, ...args) {
+
+      //在调用数组的修改值的方法前要暂停收集依赖，保证数组添加的正确性（多次循环触发依赖引起的）
+      /**
+       * 
+       * 
+       class ReactiveEffect {
+          //省略部分代码   
+          run() {
+
+            //此时如果没有加判断!effectStack.includes(this)下面的例子会导致循环的track和trigger,解决的办法就是拦截push方法不让push方法执行的时候收集相应的依赖,这种方式最终数组的结果是正确的
+            // 此时如果加上了判断!effectStack.includes(this) 下面的例子不会导致循环的track和trigger，但是结果有误，会多执行一次，也就是数组会多添加一个值。因为某些原因run方法的判断!effectStack.includes(this)有别的用处，所以是必加的。
+            // 在这之上我们还应该为了保证数组的正确性所以要在调用此方法之前暂停依赖的追踪（收集），等方法执行完成之后再允许追踪----因为调用数组方法时，方法内部会访问数组的length属性并收集length的依赖，但是对于一个修改类型的操作是不需要收集依赖的 
+            // 【这个理解有点牵强了，如果没懂看去看《vue.js 设计与实现》#129页】
+            if (!effectStack.includes(this)) { 
+              //省略部分代码              
+            }
+          }
+        }
+       * 例子
+       *  const arr = reactive([0])
+          effect(() => {
+            arr.push(1) // 内部会触发length访问操作和设置值的操作
+          })
+
+          effect(() => {
+            arr.push(2) // 内部会触发length访问操作和设置值的操作
+          })
+       */
+      pauseTracking() // 禁止收集依赖
+      let res = originMethod.apply(this, args)
+      enableTracking() //方法执行完后再设置回允许收集依赖
+
+      return res
+    }
+  })
 
   return instrumentations
 

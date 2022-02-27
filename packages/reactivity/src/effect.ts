@@ -7,7 +7,6 @@ import { TriggerOpTypes } from './operators';
 
 let activeEffect
 let effectStack = [] //防止嵌套effect 导致当前的activeEffect错乱 用栈数据结构的形式解决，在effect函数执行之前就把自己压入栈中执行完后弹出即可
-let uid = 0
 // effect(() => { //effect1
 //   stat.a  // effectStack = [effect1]
 //   effect(() => {  //effect2
@@ -15,51 +14,6 @@ let uid = 0
 //   })
 //   stat.c // effectStack = [effect1]
 // })
-
-
-
-// /**
-//  *
-//  * @param fn 当前的副作用函数
-//  * @param options 副作用函数的一下选项
-//  * @returns
-//  */
-// export function effect(fn, options: any = {}) {
-
-//   const effect = createReactiveEffect(fn, options)
-
-//   //非懒加载就立即执行
-//   if (!options.lazy) {
-//     effect()
-//   }
-//   return effect
-// }
-
-// export function createReactiveEffect(fn, options) {
-
-//   const effect = function effect() {
-
-//     if (!effectStack.includes(activeEffect)) {
-//       try {
-//         effectStack.push(effect)
-//         activeEffect = effect
-//         fn()
-//       }
-//       finally {
-//         effectStack.pop()
-//         activeEffect = effectStack[effectStack.length - 1]
-//       }
-//     }
-//   }
-//   effect.raw = fn //保存effect对应的原函数
-//   effect.id = uid++ //当前effect的唯一标识
-//   effect._isEffect = true //用于标识当前函数式响应式的effect
-//   effect.options = options //在effect上保存用户的属性
-
-
-//   return effect
-// }
-
 /**
  * 类的方式创建的effect
  * @param fn 
@@ -108,8 +62,8 @@ export class ReactiveEffect {
     if (!this.active) {
       return this.fn()
     }
-
     if (!effectStack.includes(this)) {
+      // if (true) {
       try {
         effectStack.push(activeEffect = this)
 
@@ -150,7 +104,21 @@ export class ReactiveEffect {
   }
 }
 
-export const isTracking = () => activeEffect !== undefined
+
+
+let shouldTrack = true
+
+export const isTracking = () => shouldTrack && activeEffect !== undefined
+
+// 暂停跟踪 （依赖收集）
+export function pauseTracking() {
+  shouldTrack = false
+}
+
+//开启跟踪（依赖收集）
+export function enableTracking() {
+  shouldTrack = false
+}
 
 const targetMap = new WeakMap() //使用weakMap保存响应式对象所依赖的依赖集 const state = reactive({age: 1})
 /**

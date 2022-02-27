@@ -50,7 +50,7 @@
 
 
 
-    //1.数组的查找方法：includes、lastIndexOf、indexOf
+    //===================1.数组的查找方法：includes、lastIndexOf、indexOf===================
 
     // 1.1查找响应式对象
     // const obj = {}
@@ -117,15 +117,39 @@
     // console.log(arr.indexOf(obj))
     // console.log(arr.lastIndexOf(obj))
 
-    // 2. 隐式的修改数组长度的原型方法
-    const arr = reactive([1])
-    effect(() => {
-      arr.push(1)
-    })
 
-    effect(() => {
-      arr.push(1)
-    })
+
+
+
+    // ===================2. 隐式的修改数组长度的原型方法===================
+    // const arr = reactive([0])
+    // effect(() => {
+    //   arr.push(1) // 内部会触发length访问操作和设置值的操作
+    // })
+
+    // effect(() => {
+    //   arr.push(2)
+    // })
+    /**
+     * shouldTrack = true //默认为true
+       const originMethod = Array.prototype.push // 拿到原型上的方法
+       const arrayInstrumentations = {
+         includes: function(...args){
+
+              shouldTrack = false //设置为false禁止track
+              let res = originMethod.apply(this,args)
+              shouldTrack = true // 允许track
+              return res
+         }
+       }
+     * 在track()函数中判断
+     * track(){
+     *    //禁止track直接退出
+     *    if(!shouldTrack && activeEffect !== undefined) return 
+     * }
+     */
+   
+     // splice、pop、unshift、shift等操作都是属于隐式的修改数组长度的原型方法所以都需要做拦截处理，逻辑和push操作是一样的
 
   </script>
 </body>
