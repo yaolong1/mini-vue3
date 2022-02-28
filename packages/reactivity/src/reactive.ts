@@ -107,6 +107,8 @@ export function createReactiveObject(target, isReadonly, proxyMap, baseHandlers,
 }
 
 export const toReactive = (val) => isObject(val) ? reactive(val) : val
+export const toReadonly = (val) => isObject(val) ? readonly(val) : val
+export const toShallow = (val) => val
 
 //转换为普通对象
 export function toRaw(observed) {

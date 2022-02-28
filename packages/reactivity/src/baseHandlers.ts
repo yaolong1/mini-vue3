@@ -38,7 +38,7 @@ function createInstrumentations() {
       }
     });
 
-  ; (['push','pop','shift','unshift','splice'] as const).forEach(key => {
+  ; (['push', 'pop', 'shift', 'unshift', 'splice'] as const).forEach(key => {
     const originMethod = Array.prototype[key] // 拿到原型上的方法
     instrumentations[key] = function (this, ...args) {
 
@@ -148,10 +148,27 @@ function createSetter(isShallow = false) { //拦截对象设置
     //   oldValue = toRaw(oldValue)
     // }
 
-
+    console.log('set值', key, value)
     const hadKey = (isArray(target) && isIntegerKey(key)) ? key < target.length : hasOwn(target, key)
     const res = Reflect.set(target, key, value, receiver)
     //代理对象变为原型对象后和当前的target相等，说明当前访问的不是原型链上的属性需要触发更新  
+    /**
+     例子
+      const obj = {}
+      const proto = { a: 1 } //原型
+      const parent = reactive(proto)
+      const child = reactive(obj)
+      // child.__proto__ = parent
+      Object.setPrototypeOf(child, parent)
+      console.log(child)
+      effect(() => {
+        console.log(child.a) // child原对象上没有，就回去原型链上找a
+      })
+
+      // 如果child原对象上没有该属性，就回去原型链上找a执行trigger 此时会触发两次trigger,第一次触发是在child响应式对象上、第二次是在parent对象上由于两个对象都是响应式，
+      所以要触发两次。解决办法： target === toRaw(receiver) 《vue.js 设计与实现》 #合理的触发响应性-106页
+      child.a = 2 
+     */
     if (target === toRaw(receiver)) {
       if (!hadKey) {
         //新增

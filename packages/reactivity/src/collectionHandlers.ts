@@ -54,7 +54,7 @@ function get(key) {
   let res
   if (had) {
     res = target.get(key)
-    return toReactive(res) // 深度响应
+    return toReactive(res) // 深度响应 p.get('key').set('ke2',1) p是一个set响应式对象  为了这种情况也能触发依赖更新
   }
 }
 
@@ -100,12 +100,44 @@ function set(key, value) {
   return this
 }
 
+/**
+ * 
+ * @param thisArg forEach中的this
+ * @param callback 回调
+ */
+function forEach(callback, thisArg) {
+  const target = toRaw(this)
+  track(target, TrackOpTypes.ITERATE, ITERATE_KEY) // ITERATE_KEY作为key的原因是因为delete、add操作都要影响forEach
+
+  // 将普通对象包装成响应式对象
+
+  const warp = toReactive //TODO 此处应该还要根据是否只读来判断包裹对象的类型
+  target.forEach(((key, value) => {
+
+
+    /**
+     const key = { k1: 1 }
+     const value = new Set([1, 2, 3])
+
+     const p = reactive(new Map([[key, value]]))
+
+     effect(() => {
+       p.forEach((value, key) => {
+         console.log(value.size) // value、key应该为响应式对象，否则value.size将不会依赖跟踪，所以要是用 warp(key), warp(value)包裹
+       });
+     })
+   */
+    callback.call(thisArg, warp(key), warp(value), this)
+  }))
+}
+
 function createInstrumentations() {
   const mutableInstrumentations = {
     add,
     delete: deleteEntry,
     set,
-    get
+    get,
+    forEach
   }
 
 

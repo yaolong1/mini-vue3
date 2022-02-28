@@ -12,13 +12,28 @@
   <script src="../dist/runtime-dom.global.js"></script>
   <script>
     const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
-    const s = new Map
-    let p1 = { a: 1 }
-    s.set('key', p1)
-    let data = reactive(s)
-    effect(() => {
-      console.log(data.size)
-    })
+
+    // 数据污染
+    // const s = new Map
+    // let p1 = { a: 1 }
+    // s.set('key', p1)
+    // let data = reactive(s)
+    // effect(() => {
+    //   console.log(data.size)
+    // })
+
+
+    //forEach响应式
+    // const key = { k1: 1 }
+    // const value = new Set([1, 2, 3])
+
+    // const p = reactive(new Map([[key, value]]))
+
+    // effect(() => {
+    //   p.forEach((value, key) => {
+    //     console.log(value.size)
+    //   });
+    // })
 
   </script>
 </body>

@@ -1,4 +1,4 @@
-import { isIntegerKey, isSymbol } from '@mini-vue3/shared';
+import { isIntegerKey, isMap, isSymbol } from '@mini-vue3/shared';
 import { isArray } from '@mini-vue3/shared';
 import { ITERATE_KEY } from './baseHandlers';
 import { createDep } from './dep';
@@ -266,6 +266,7 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
     if (key !== void 0) {
       add(depsMap.get(key)) // 拿到当前key的依赖放进要执行effects中 --此逻辑是修改值的公共逻辑（无论是修改数组还是修改对象）
     }
+    
     switch (type) {
 
       case TriggerOpTypes.ADD:
@@ -298,13 +299,13 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
         }
         break
       case TriggerOpTypes.DELETE:
-        //删除对象的特殊情况
+        //删除对象的特殊情况 map => [foreach for in] 时候依赖跟踪此时需要触发、 set=> [foreach for in] 时候依赖跟踪此时需要触发、、 {} =>[for in]时候依赖跟踪此时需要触发
         if (!isArray(target)) {
           add(depsMap.get(ITERATE_KEY))
         }
         break
       case TriggerOpTypes.SET:
-        if (!isArray(target)) {
+        if (isMap(target)) { //map的set操作是需要更新的，
           add(depsMap.get(ITERATE_KEY))
         }
         break

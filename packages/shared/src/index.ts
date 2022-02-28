@@ -9,6 +9,7 @@ export const isIntegerKey = (key) => parseInt(key) + "" === key
 const hasOwnProperty = Object.prototype.hasOwnProperty
 export const hasOwn = (target, key) => hasOwnProperty.call(target, key)
 
+export const isMap = (val) => toRawType(val) === 'Map'
 
 const objectToString = Object.prototype.toString
 //获取对象的字符串。[Object rawType]
