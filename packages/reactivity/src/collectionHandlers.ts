@@ -1,6 +1,7 @@
+import { isMap } from './../../shared/src/index';
 import { hasChanged } from '@mini-vue3/shared';
 import { hasOwn } from '@mini-vue3/shared';
-import { ITERATE_KEY } from './baseHandlers';
+import { ITERATE_KEY, MAP_KEY_ITERATE_KEY } from './effect';
 import { track, trigger } from './effect';
 import { TrackOpTypes, TriggerOpTypes } from './operators';
 import { ReactiveFlags, toRaw, toReactive } from './reactive';
@@ -91,11 +92,11 @@ function set(key, value) {
   if (!had) {
     // 新增
     console.log('新增')
-    trigger(target, TriggerOpTypes.ADD, value)
+    trigger(target, TriggerOpTypes.ADD, key, value)
   } else if (hasChanged(value, oldValue)) {
     // 更新
     console.log('更新', '老对象', oldValue, '新对象', value)
-    trigger(target, TriggerOpTypes.SET, value, oldValue)
+    trigger(target, TriggerOpTypes.SET, key, value, oldValue)
   }
   return this
 }
@@ -131,13 +132,58 @@ function forEach(callback, thisArg) {
   }))
 }
 
+function createIteratorMethod(method, isReadonly = false, isShallow = false) {
+  return function (this: any, ...args) {
+    const target = toRaw(this)
+    console.log(this)
+    const itr = target[method]() //获取迭代器对象
+    const warp = toReactive //TODO 此处还要判断是否只读
+    const isPair = method === 'entries' || (method === Symbol.iterator && isMap(target)) // 是否是一对 【key,value】
+
+
+    const isKeys = method === 'keys' //是否是keys操作
+
+    /**
+      const map = new Map([['key', 1], ['key2', 2]])
+      const p = reactive(map)
+
+      effect(() => {
+        for (const i of p.keys()) {
+          console.log(i)
+        }
+
+      })
+      p.set('key3', 3) 
+      
+      对于Map的keys方法不能使用ITERATE_KEY作为依赖收集的key,因为keys是针对key的访问，当更新的时候是不需要触发依赖，key没有变只是值变了。
+      所以依赖收集的时候需要分开收集不能都使用ITERATE_KEY作为依赖收集的key，针对keys操作我们用MAP_KEY_ITERATOR_KEY作为依赖收集的key。
+      这样就可以在trigger的时候分别对待：（ADD、DELETE）触发 MAP_KEY_ITERATE_KEY和ITERATE_KEY的依赖， SET触发ITERATE_KEY的依赖
+     */
+    isKeys ? track(target, TrackOpTypes.GET, MAP_KEY_ITERATE_KEY) : track(target, TrackOpTypes.GET, ITERATE_KEY) // ITERATE_KEY依赖收集
+    return {
+      next() {
+        const { value, done } = itr.next() //调用next()得到迭代的value和done
+        //返回重写之后的
+        return {
+          value: value ? isPair ? [warp(value[0]), warp(value[1])] : warp(value) : value,// 重写一下value,把value变成响应式的此处和forEach方法一样
+          done
+        }
+      },
+      [Symbol.iterator]() {
+        return this
+      }
+
+    }
+  }
+}
+
 function createInstrumentations() {
   const mutableInstrumentations = {
     add,
     delete: deleteEntry,
     set,
     get,
-    forEach
+    forEach,
   }
 
 
@@ -149,6 +195,16 @@ function createInstrumentations() {
 
   const shallowReadonlyInstrumentations = {
   }
+
+
+  const iteratorMethod = ['entries', 'values', 'keys', Symbol.iterator]
+  iteratorMethod.forEach(method => {
+    mutableInstrumentations[method] = createIteratorMethod(method, false, false)
+    readonlyInstrumentations[method] = createIteratorMethod(method, true, false)
+    shallowReactiveInstrumentations[method] = createIteratorMethod(method, false, true)
+    shallowReadonlyInstrumentations[method] = createIteratorMethod(method, true, true)
+  })
+
 
   return { mutableInstrumentations, readonlyInstrumentations, shallowReadonlyInstrumentations, shallowReactiveInstrumentations }
 }

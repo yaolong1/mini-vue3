@@ -1,5 +1,5 @@
 import { extend, hasChanged, hasOwn, isArray, isIntegerKey, isObject, isSymbol, makeMap } from "@mini-vue3/shared"
-import { enableTracking, pauseTracking, track, trigger } from "./effect"
+import { enableTracking, ITERATE_KEY, pauseTracking, track, trigger } from "./effect"
 import { TrackOpTypes, TriggerOpTypes } from "./operators"
 import { reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowReactiveMap, shallowReadonlyMap, toRaw } from "./reactive"
 //实现响应式
@@ -7,8 +7,7 @@ import { reactive, ReactiveFlags, reactiveMap, readonly, readonlyMap, shallowRea
 //是否仅读 仅读报warn
 //是否浅度响应式
 
-// 表示for...in 操作类型所触发的依赖收集的key。因为for...in 操作是针对这个对象的访问,没有针对对象的属性，所以就没有key,这里我们直接自定义一个key，用于专门处理
-export const ITERATE_KEY = Symbol()
+
 
 const builtInSymbols = new Set(
   Object.getOwnPropertyNames(Symbol)

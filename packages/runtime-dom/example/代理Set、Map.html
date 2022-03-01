@@ -35,6 +35,32 @@
     //   });
     // })
 
+
+    //迭代器方法的响应式处理 entries、keys、value
+    // const set = new Set([1, 2, 3, 4])
+    // const map = new Map([['key', 1], ['key2', 2]])
+    // const p = reactive(map)
+
+    // effect(() => {
+    //   for (const i of p.entries()) {
+    //     console.log(i)
+    //   }
+
+    // })
+    // p.set('key3', 3)
+
+
+    const map = new Map([['key', 1], ['key2', 2]])
+    const p = reactive(map)
+
+    effect(() => {
+      for (const i of p.keys()) {
+        console.log(i)
+      }
+
+    })
+    p.set('key3', 3) //因为此时是针对key的依赖收集，当操作类型是SET时其实并没有减少map的数量，只是修改了值，但此时遍历的是key,SET操作是不影响的压根不需要更新
+
   </script>
 </body>
 

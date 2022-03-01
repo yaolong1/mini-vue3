@@ -1,8 +1,14 @@
 import { isIntegerKey, isMap, isSymbol } from '@mini-vue3/shared';
 import { isArray } from '@mini-vue3/shared';
-import { ITERATE_KEY } from './baseHandlers';
 import { createDep } from './dep';
 import { TriggerOpTypes } from './operators';
+
+
+// 表示for...in 操作类型所触发的依赖收集的key。因为for...in 操作是针对这个对象的访问,没有针对对象的属性，所以就没有key,这里我们直接自定义一个key，用于专门处理
+export const ITERATE_KEY = Symbol()
+
+// 针对map的方法.keys的依赖收集key
+export const MAP_KEY_ITERATE_KEY = Symbol()
 
 
 let activeEffect
@@ -266,7 +272,7 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
     if (key !== void 0) {
       add(depsMap.get(key)) // 拿到当前key的依赖放进要执行effects中 --此逻辑是修改值的公共逻辑（无论是修改数组还是修改对象）
     }
-    
+
     switch (type) {
 
       case TriggerOpTypes.ADD:
@@ -282,7 +288,9 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
          */
         if (!isArray(target)) {
           add(depsMap.get(ITERATE_KEY))
-
+          if (isMap(target)) {
+            add(depsMap.get(MAP_KEY_ITERATE_KEY))
+          }
           /**
            * 如果是修改数组中的某一个索引，即数组新增了索引直接找length的dep
            * 例子
@@ -302,6 +310,9 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
         //删除对象的特殊情况 map => [foreach for in] 时候依赖跟踪此时需要触发、 set=> [foreach for in] 时候依赖跟踪此时需要触发、、 {} =>[for in]时候依赖跟踪此时需要触发
         if (!isArray(target)) {
           add(depsMap.get(ITERATE_KEY))
+          if (isMap(target)) {
+            add(depsMap.get(MAP_KEY_ITERATE_KEY))
+          }
         }
         break
       case TriggerOpTypes.SET:
