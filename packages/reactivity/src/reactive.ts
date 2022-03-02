@@ -119,3 +119,6 @@ export function toRaw(observed) {
 export function isReadonly(val) {
   return !!val[ReactiveFlags.IS_READONLY]
 }
+export function isReactive(val) {
+  return !!val[ReactiveFlags.IS_REACTIVE]
+}

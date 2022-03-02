@@ -2,7 +2,7 @@ import { hasChanged, isArray, isObject } from "@mini-vue3/shared"
 import { createDep } from "./dep"
 import { isTracking, track, trackEffects, trigger, triggerEffects } from "./effect"
 import { TrackOpTypes, TriggerOpTypes } from "./operators"
-import { reactive, toReactive } from "./reactive"
+import { isReactive, reactive, toReactive } from "./reactive"
 
 /**
  * 深度响应式ref
@@ -39,6 +39,34 @@ export function toRefs(object) {
     ret[key] = toRef(object, key)
   }
   return ret
+}
+
+
+const shallowUnwrapHandlers = {
+  get(target, key, receiver) {
+    console.log(target, key)
+    return unref(Reflect.get(target, key, receiver))
+  },
+  set(target, key, value, receiver) {
+    const oldValue = target[key] 
+    //如果oldValue是一个Ref,value不是ref
+    if (isRef(oldValue) && !isRef(value)) {
+      //直接设置
+      oldValue.value = value
+      return true
+    } else {
+      return Reflect.set(target, key, value, receiver)
+    }
+  }
+}
+
+/**
+ * 自动脱ref
+ * @param objectWithRefs  
+ */
+export function proxyRefs(objectWithRefs) {
+  debugger
+  return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers)
 }
 
 
@@ -107,4 +135,8 @@ export function triggerRefValue(ref) {
 
 export const isRef = (val) => {
   return !!val.__v_isRef
+}
+
+export const unref = (ref) => {
+  return isRef(ref) ? ref.value : ref
 }
