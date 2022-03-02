@@ -95,8 +95,8 @@
           h('li', { key: 'f' }, 'f'),
           h('li', { key: 'g' }, 'g'),
         ]
-        const oldNode = h('h1', {}, children1)
-        const newNode = h('h1', {}, children2)
+        const oldNode = h('button', {}, "children1")
+        const newNode = h('button', { disabled: false }, "children2")
 
 
         let vnode = this.flag.value ? oldNode : newNode

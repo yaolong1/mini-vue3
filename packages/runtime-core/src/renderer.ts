@@ -610,7 +610,7 @@ export function createRenderer(renderOptions) {
       }
     }
 
-    //老的没有新的有删除老的
+    //老的没有新的有 删除老的
     for (let key in oldProps) {
       if (!(key in newProps)) {
         hostPatchProp(el, key, oldProps[key], null)
