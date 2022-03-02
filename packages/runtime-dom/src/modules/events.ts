@@ -1,3 +1,4 @@
+import { isArray } from '@mini-vue3/shared';
 
 export function patchEvent(el, key, nextValue) {
   //vei vue event invoker 缓存的事件绑定  对于相同事件,值不同的情况直接从缓存中取即可
@@ -29,7 +30,11 @@ export function patchEvent(el, key, nextValue) {
 function createInvoker(nextValue) {
   //e : 事件源
   const invoker = (e) => { //每次调用都是invoker
-    invoker.value(e)
+
+    // 一个事件有可能会绑定多个方法 addEventLister('onClick',fn1) addEventLister('onClick',fn2) 点击时会执行fn1和fn2 《vue.js 设计与实现》 #200页
+    // eg： { onClick: [() => console.log(1), () => console.log(1)] } 
+    isArray(invoker.value) ? invoker.value.map(fn => fn(e)) : invoker.value(e)
+
   }
   invoker.value = nextValue // 将当前的value (函数) 存到invoker.value变量上，到时候如果改变了就直接修改  invoker.value = newValue即可。 因为invoker是一个引用
   return invoker
