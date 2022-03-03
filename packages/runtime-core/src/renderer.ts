@@ -51,7 +51,7 @@ export function createRenderer(renderOptions) {
         //diff算法 比较两课前后的树 更新\删除
         console.log('组件更新逻辑')
         const prevTree = instance.subTree
-        const nextTree = instance.render.call(proxy, proxy)
+        const nextTree = instance.subTree =  instance.render.call(proxy, proxy)
         patch(prevTree, nextTree, container, anchor)
       }
     }
