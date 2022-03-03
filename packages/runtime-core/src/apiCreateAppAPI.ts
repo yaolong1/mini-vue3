@@ -8,7 +8,7 @@ export function createAppAPI(render) {
         const vnode = createVNode(rootComponent, rootProps)
         console.log('将根组件变为vnode')
         //2. 挂载的核心就是根据传入的组件把它渲染成组件的虚拟接点，然后再将虚拟节点渲染到容器中
-        render(vnode, container)
+         render(vnode, container)
       },
       use() { },
       directive() { },

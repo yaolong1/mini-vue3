@@ -1,4 +1,4 @@
-import { isSameVNodeType, normalizeVNode, Text } from './vnode';
+import { Fragment, isSameVNodeType, normalizeVNode, Text } from './vnode';
 import { ReactiveEffect } from '@mini-vue3/reactivity';
 import { ShapeFlags } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
@@ -30,7 +30,7 @@ export function createRenderer(renderOptions) {
 
 
   // 调用render函数用 把render函数放进ReactiveEffect中
-  const setupRenderEffect = (initialVNode, instance, container) => {
+  const setupRenderEffect = (initialVNode, instance, container, anchor) => {
     console.log('初始化调用render')
     // 创建渲染effect
     // 核心是调用render, 数据发生变化就会重新调用render
@@ -43,7 +43,7 @@ export function createRenderer(renderOptions) {
         // 当渲染完成之后，如果数据发生了改变会再次执行当前方法
         const subTree = instance.subTree = instance.render.call(proxy, proxy) //渲染调用h方法
         // 真正开始渲染组件 即渲染subTree //前面的逻辑其实就是为了得到suTree,初始化组件实例为组件实例赋值之类的操作
-        patch(null, subTree, container)
+        patch(null, subTree, container, anchor)
         initialVNode.el = subTree.el
         instance.isMounted = true
       } else {
@@ -52,7 +52,7 @@ export function createRenderer(renderOptions) {
         console.log('组件更新逻辑')
         const prevTree = instance.subTree
         const nextTree = instance.render.call(proxy, proxy)
-        patch(prevTree, nextTree, container)
+        patch(prevTree, nextTree, container, anchor)
       }
     }
 
@@ -62,10 +62,10 @@ export function createRenderer(renderOptions) {
     update()
   }
 
-  const processComponent = (n1, n2, container) => {
+  const processComponent = (n1, n2, container, anchor) => {
     if (n1 == null) {
       //组件的挂载
-      mountComponent(n2, container)
+      mountComponent(n2, container, anchor)
     } else {
       //组件的更新
       console.log('组件 更新')
@@ -86,14 +86,29 @@ export function createRenderer(renderOptions) {
   }
 
 
-  const processText = (n1, n2, container) => {
+  const processText = (n1, n2, container, anchor) => {
     if (n1 == null) {
       //创建一个文本节点 此时的n2.children是一个字符串
-      const textNode = hostCreateText(n2.children)
-      n2.el = textNode
-      hostInsert(textNode, container)
+      const textNode = n2.el = hostCreateText(n2.children)
+      hostInsert(textNode, container, anchor)
     } else {
       console.log('Text更新')
+      const el = n2.el = n1.el
+      if (n1.children !== n2.children) {
+        hostSetText(el, n2.children)
+      }
+    }
+  }
+
+
+  const processFragment = (n1, n2, container, anchor) => {
+
+    if (!n1) {
+      //不存在旧节点，直接挂载
+      mountChildren(container, n2.children)
+    } else {
+      //存在旧节点
+      patchChildren(n1, n2, container, anchor)
     }
   }
 
@@ -107,6 +122,10 @@ export function createRenderer(renderOptions) {
 
   // 卸载元素
   const unmount = (vnode) => {
+    //如果是碎片就卸载它的孩子节点
+    if (vnode.type === Fragment) {
+      vnode.children.forEach((v) => unmount(v))
+    }
     hostRemove(vnode.el)
   }
 
@@ -156,7 +175,7 @@ export function createRenderer(renderOptions) {
 
 
   // 组件的挂载流程
-  const mountComponent = (initialVNode, container) => {
+  const mountComponent = (initialVNode, container, anchor) => {
     // 将组件的vnode渲染到容器中
 
     // 1、给组件创造一个组件实例 
@@ -165,7 +184,7 @@ export function createRenderer(renderOptions) {
     setupComponent(instance)
     // 3、调用render方法实现组件的渲染逻辑（首次渲染即需要render函数中所有依赖的响应式对象 =>依赖收集）
     // 这里就会使用reactiveEffect，因为视图和数据时双向绑定的 数据变->视图变
-    setupRenderEffect(initialVNode, instance, container)
+    setupRenderEffect(initialVNode, instance, container, anchor)
   }
 
 
@@ -176,7 +195,7 @@ export function createRenderer(renderOptions) {
    * @param c2 新的children
    * @param container
    */
-  const patchKeyedChildren = (c1, c2, container) => {
+  const patchKeyedChildren = (c1, c2, container, parentAnchor) => {
     let e1 = c1.length - 1 //c1最大的索引值
     let e2 = c2.length - 1 //c2最大的索引值
     let i = 0 //从头开始比
@@ -284,7 +303,7 @@ export function createRenderer(renderOptions) {
         const nextPos = e2 + 1
         //如果e2下一个索引有值并且大于新children长度 c2 说明当前更新元素是最后一个 参照物为空 直接appendChild
         //如果e2下一个索引有值并且小于新children长度 c2 说明当前更新元素后面还有元素 直接把后面的元素当做参照物插入 
-        const anchor = nextPos < c2.length ? c2[nextPos].el : null
+        const anchor = nextPos < c2.length ? c2[nextPos].el : parentAnchor
         while (i <= e2) {
           patch(null, c2[i], container, anchor)
           i++
@@ -394,7 +413,7 @@ export function createRenderer(renderOptions) {
       const lastIndex = i + s2 // 插入元素的索引
       const lastChild = c2[lastIndex] // 当前要插入的元素
       const nextPos = lastIndex + 1 // 当前插入元素的下一个元素
-      const anchor = nextPos < c2.length ? c2[nextPos].el : null
+      const anchor = nextPos < c2.length ? c2[nextPos].el : parentAnchor
 
       if (newIndexToOldMapIndex[i] === 0) { // 还没有真实节点需要创建真实节点
         patch(null, lastChild, container, anchor)
@@ -520,7 +539,7 @@ export function createRenderer(renderOptions) {
   /**
    * 更新孩子
    */
-  const patchChildren = (n1, n2, el) => {
+  const patchChildren = (n1, n2, el, anchor = null) => {
     const c1 = n1.children // 新孩子
     const c2 = n2.children // 旧孩子
 
@@ -545,7 +564,7 @@ export function createRenderer(renderOptions) {
         // 新孩子是数组
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           //diff
-          patchKeyedChildren(c1, c2, el)
+          patchKeyedChildren(c1, c2, el, anchor)
         } else {
           //卸载旧孩子
           unmountChildren(c1)
@@ -637,6 +656,7 @@ export function createRenderer(renderOptions) {
     patchChildren(n1, n2, el)
   }
 
+
   /**
    * 
    * @param n1 老vnode
@@ -644,7 +664,6 @@ export function createRenderer(renderOptions) {
    * @param container 挂载的容器
    */
   const patch = (n1, n2, container, anchor = null) => {
-
     //如果新节点和老节点不相等,删除老节点 
     if (n1 && !isSameVNodeType(n1, n2)) {
       unmount(n1)
@@ -659,12 +678,16 @@ export function createRenderer(renderOptions) {
       //normalizeVNode后的文本类型
       case Text:
         console.log('patch Text-------')
-        processText(n1, n2, container)
+        processText(n1, n2, container, anchor)
+        break;
+      case Fragment:
+        console.log("patch Fragment-------")
+        processFragment(n1, n2, container, anchor)
         break;
       default:
         if (shapeFlag & ShapeFlags.COMPONENT) { //如果当前是一个组件的vnode
           console.log('patch组件-------')
-          processComponent(n1, n2, container)
+          processComponent(n1, n2, container, anchor)
         } else if (shapeFlag & ShapeFlags.ELEMENT) {
           console.log('patch元素-------')
           processElement(n1, n2, container, anchor)

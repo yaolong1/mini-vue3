@@ -10,7 +10,7 @@
 
 <body>
   <div id="app"></div>
-  <script src="../dist/runtime-dom.global.js"></script>
+  <!-- <script src="../dist/runtime-dom.global.js"></script> -->
   <script src="http://unpkg.com/vue"></script>
   <script>
     const { createApp, h, reactive, toRefs, ref } = MiniVue3RuntimeDOM
@@ -35,13 +35,16 @@
         const { add, counter } = useCounter()
         const flag = ref(true)
 
-        setTimeout(() => {
+        function test() {
+          console.log(1)
+          debugger
           flag.value = !flag.value
-        }, 2000)
+        }
         return {
           add,
           counter,
-          flag
+          flag,
+          test
         }
       },
       render(proxy) {
@@ -95,8 +98,8 @@
           h('li', { key: 'f' }, 'f'),
           h('li', { key: 'g' }, 'g'),
         ]
-        const oldNode = h('button', {}, "children1")
-        const newNode = h('button', { disabled: false }, "children2")
+        const oldNode = h('h1', {}, [h('div', { onClick: this.test }, '1'), h('div', {}, '2')])
+        const newNode = h('h1', {}, [h('div', { onClick: this.test }, '1'), "children2"])
 
 
         let vnode = this.flag.value ? oldNode : newNode

@@ -48,7 +48,7 @@ const shallowUnwrapHandlers = {
     return unref(Reflect.get(target, key, receiver))
   },
   set(target, key, value, receiver) {
-    const oldValue = target[key] 
+    const oldValue = target[key]
     //如果oldValue是一个Ref,value不是ref
     if (isRef(oldValue) && !isRef(value)) {
       //直接设置
@@ -65,7 +65,6 @@ const shallowUnwrapHandlers = {
  * @param objectWithRefs  
  */
 export function proxyRefs(objectWithRefs) {
-  debugger
   return isReactive(objectWithRefs) ? objectWithRefs : new Proxy(objectWithRefs, shallowUnwrapHandlers)
 }
 

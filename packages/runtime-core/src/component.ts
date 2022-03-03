@@ -14,8 +14,8 @@ export function createComponentInstance(vnode) {
     attrs: {}, // 除了props中的属性 //没定义的叫attrs
     slots: {}, // 组件的插槽
     setupState: {}, // 组件中setup的返回值 {方法，属性} 
-    propsOptions: type.props, // 组件中的props选项 const component = {props:{title:{type:String,default:'xxx'}}}
-    proxy: null, // 实例的代理对象
+    propsOptions: type.props || {}, // 组件中的props选项 const component = {props:{title:{type:String,default:'xxx'}}}
+    proxy: null, // 实例的代理对象  
     render: null, // 组件的渲染函数
     emit: null, // 事件的触发
     exposed: {}, // 暴露的方法

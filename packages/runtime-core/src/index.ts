@@ -5,3 +5,4 @@ export { createRenderer } from './renderer'
 export { h } from './h'
 
 export { watch } from './apiWatch'
+export * from './vnode'

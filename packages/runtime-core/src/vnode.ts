@@ -36,6 +36,11 @@ export const isSameVNodeType = (n1, n2) => n1.type === n2.type && n1.key === n2.
 
 // 将h('xx',{},['s','b']) 孩子是字符的转为VNode的格式 正规化一下方便后续操作
 export const Text = Symbol()
+//注释节点
+export const Comment = Symbol()
+
+//碎片
+export const Fragment = Symbol()
 export const normalizeVNode = (vnode) => {
   if (isObject(vnode)) {
     return vnode
