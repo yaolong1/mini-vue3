@@ -24,7 +24,8 @@ export function createRenderer(renderOptions) {
     setText: hostSetText,
     setElementText: hostSetElementText,
     parentNode: hostParentNode,
-    nextSibling: hostNextSibling
+    nextSibling: hostNextSibling,
+    firstChild: hostFirstChild,
   } = renderOptions
 
 
@@ -51,7 +52,7 @@ export function createRenderer(renderOptions) {
         //diff算法 比较两课前后的树 更新\删除
         console.log('组件更新逻辑')
         const prevTree = instance.subTree
-        const nextTree = instance.subTree =  instance.render.call(proxy, proxy)
+        const nextTree = instance.subTree = instance.render.call(proxy, proxy)
         patch(prevTree, nextTree, container, anchor)
       }
     }
@@ -114,8 +115,13 @@ export function createRenderer(renderOptions) {
 
 
   // 卸载children
-  const unmountChildren = (children) => {
-    for (let i = 0; i < children.length; i++) {
+  /**
+   * 
+   * @param children 
+   * @param start 卸载的开始节点默认第一个
+   */
+  const unmountChildren = (children, start = 0) => {
+    for (let i = start; i < children.length; i++) {
       unmount(children[i])
     }
   }
@@ -133,9 +139,10 @@ export function createRenderer(renderOptions) {
    * 挂载孩子
    * @param container 
    * @param children 
+   * @param start 挂载开始的节点索引 
    */
-  const mountChildren = (container, children) => {
-    for (let i = 0; i < children.length; i++) {
+  const mountChildren = (container, children, start = 0) => {
+    for (let i = start; i < children.length; i++) {
       const child = children[i] = normalizeVNode(children[i])
       patch(null, child, container)
     }
@@ -189,8 +196,33 @@ export function createRenderer(renderOptions) {
 
 
 
+  const patchUnKeyedChildren = (c1, c2, container) => {
+    const oldLength = c1.length
+    const newLength = c2.length
+    //公共部分
+    const commonLength = Math.min(oldLength, newLength)
+
+    //patch公共部分节点
+    for (let i = 0; i < commonLength; i++) {
+      let preVNode = c1[i]
+      let nextVNode = c2[i]
+      patch(preVNode, nextVNode, container)
+    }
+
+
+    if (oldLength > newLength) {
+      // 卸载老节点
+      unmountChildren(c1, commonLength)
+    } else {
+      // 挂载新节点
+      mountChildren(container, commonLength)
+    }
+  }
+
+
+
   /**
-   * 
+   * 有key的双端diff
    * @param c1 老的children
    * @param c2 新的children
    * @param container
@@ -445,6 +477,82 @@ export function createRenderer(renderOptions) {
     }
   }
 
+  /**
+   * 有key的简单diif
+   * @param c1 
+   * @param c2 
+   * @param container 
+   * @param parentAnchor 
+   */
+  const patchSimpleKeyedChild = (c1, c2, container, parentAnchor) => {
+    console.log(c1, c2)
+    const newChildren = c2
+    const oldChildren = c1
+
+    //是否删除老的节点
+    let isDel = false
+    let lastIndex
+    for (let i = 0; i < newChildren.length; i++) {
+      const newNode = newChildren[i]
+      let find = false
+      for (let j = 0; j < oldChildren.length; j++) {
+        const oldNode = oldChildren[j]
+
+        if (isSameVNodeType(newNode, oldNode)) {
+          find = true
+          //更新复用el
+          patch(oldNode, newNode, container)
+          if (j < lastIndex) {
+            //需要移动元素
+            //新node之前的node
+            const preNode = newChildren[i - 1]
+            if (preNode) {
+              //移动的锚点
+              const anchor = hostNextSibling(preNode.el)
+              //将当前的新节点插入到anchor位置
+              hostInsert(newNode.el, container, anchor)
+            }
+
+          } else {
+            //不需要移动
+            lastIndex = j
+          }
+          break
+        }
+
+      }
+
+
+      //如果当前newNode在oldChildren中没有找到，当前children需要添加
+      if (!find) {
+        //新node之前的node
+        const preNode = newChildren[i - 1]
+        let anchor
+        if (preNode) {
+          //插入的锚点,前一个节点的下一个兄弟节点
+          anchor = hostNextSibling(preNode.el)
+        }
+        else {
+          //如果没有前一个节点说明是第一个新节点，直接插入第一个位置
+          anchor = hostFirstChild(container)
+        }
+        patch(null, newNode, container, anchor)
+
+      }
+    }
+
+
+    //删除老的
+    for (let i = 0; i < oldChildren.length; i++) {
+      const oldNode = oldChildren[i]
+      const has = newChildren.find(newNode => isSameVNodeType(newNode, oldNode))
+      if (!has) {
+        //没有找到删除老的节点
+        unmount(oldNode)
+      }
+    }
+
+  }
 
   function getSequence(arr: number[]): number[] {
     let result = [0] // 存的是最长递增子序列的索引
@@ -563,8 +671,11 @@ export function createRenderer(renderOptions) {
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         // 新孩子是数组
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-          //diff
-          patchKeyedChildren(c1, c2, el, anchor)
+          //双端diff
+          // patchKeyedChildren(c1, c2, el, anchor)
+
+          //简单diff
+          patchSimpleKeyedChild(c1, c2, el, anchor)
         } else {
           //卸载旧孩子
           unmountChildren(c1)

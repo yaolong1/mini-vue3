@@ -37,6 +37,8 @@ export const nodeOps = {
   parentNode: (node) => node.parentNode,
   //获取下一个兄弟节点
   nextSibling: (node) => node.nextSibling,
+  //容器的第一个节点
+  firstChild: (container) => container.firstChild,
   //元素选择器
   querySelector: (selector) => document.querySelector(selector)
 }
