@@ -45,33 +45,37 @@
       render(proxy) {
 
 
+        const children1 = [
+          h('li', { key: '4' }, '4'),
+          h('li', { key: '5' }, '5'),
+          h('li', { key: '2' }, '2'),
+          h('li', { key: '6' }, '6'),
+          h('li', { key: '7' }, '7'),
+          h('li', { key: '1' }, '1'),
+          h('li', { key: '3' }, '3'),
+          h('li', { key: '0' }, '0'),
+        ]
+
+        const children2 = [
+          h('li', { key: '4' }, '4'),
+          h('li', { key: '2' }, '2'),
+          h('li', { key: '1' }, '1'),
+          h('li', { key: '3' }, '3'),
+        ]
+
+
+        // const children2 = [
+        //   h('li', { key: '1' }, '1'),
+        //   h('li', { key: '2' }, '2'),
+        //   h('li', { key: '3' }, '3'),
+        //   h('li', { key: '4' }, '4'),
+        // ]
+
         // const children1 = [
         //   h('li', { key: '1' }, '1'),
         //   h('li', { key: '2' }, '2'),
         //   h('li', { key: '3' }, '3'),
-        //   h('li', { key: '4' }, '4'),
         // ]
-
-        // const children2 = [
-        //   h('li', { key: '4' }, '4'),
-        //   h('li', { key: '2' }, '2'),
-        //   h('li', { key: '1' }, '1'),
-        //   h('li', { key: '3' }, '3'),
-        // ]
-
-
-        const children2 = [
-          h('li', { key: '1' }, '1'),
-          h('li', { key: '2' }, '2'),
-          h('li', { key: '3' }, '3'),
-          h('li', { key: '4' }, '4'),
-        ]
-
-        const children1 = [
-          h('li', { key: '1' }, '1'),
-          h('li', { key: '2' }, '2'),
-          h('li', { key: '3' }, '3'),
-        ]
         const oldNode = h('ul', {}, [h('button', { class: 'btn', onclick: this.change }, '改变'), h(Fragment, {}, children1)])
         const newNode = h('ul', {}, [h('button', { class: 'btn', onclick: this.change }, '改变'), h(Fragment, {}, children2)])
 

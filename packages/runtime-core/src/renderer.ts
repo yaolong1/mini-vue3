@@ -343,135 +343,129 @@ export function createRenderer(renderOptions) {
       }
 
       //===========common sequence unmount==============
-      /**
-       * 
-       * 看i和e1的关系 如果i>e2说明老的children有多余的元素需要删除
-       * 删除的元素就是 [i,e1]之间的索引所对应的元素
-       * 例子
-       * c1= a b c
-       * c2= a b 
-       * 
-       * 此时执行完相同元素path之后 i=2 e1=2 e2=1
-       * 2>1 所以有新元素 删除的元素在索引区间[2,2]   c1[2]=c c为删除元素
-       * 
-       * 
-       * 
-       * 
-       * c1= c a b
-       * c2=   a b  这种同样也成立 i=0 e1=0 e2=-1  i>e2   删除元素索引[0,0] c1[0] = c
-       * 插入的时候必须要有参照物 anchor
-       * 
-       * 如果e2下一个索引有值并且大于新children长度 c2 说明当前更新元素是最后一个 参照物为空
-       * 如果e2下一个索引有值并且小于新children长度 c2 说明当前更新元素后面还有元素 直接把后面的元素当做参照物插入
-       * 下一个节点 nextPos = e2 + 1
-       * anchor = nextPos < c2.length ? c2[nextPos].el : null
-       * 
-       */
     } else if (i > e2) { //有删除元素
       while (i <= e1) {  //删除 i到e1之间的元素
         unmount(c1[i])
         i++
       }
-    }
+    } else {
 
-    // unknown sequence
-    /**
-     * 如果序列是这样的形式
-     * 例子                    i=0
-     * c1 = a b c d   e f g   e1=6
-     * c2 = a b e c d h f g   e2=7
-     * 
-     * 最终比对完公共部分,剩下的序列就是未知序列
-     * 
-     * 
-     * 前序比对和后序比对完成后 此时的 i=2 e1=4 e2=5
-     * 
-     * 
-     * 
-     * c1 未知序列 c d e
-     * c2 未知序列 e c d h
-     * 
-     * c 和 d 可以复用 需要采用以下方法来进行删除或者新增
-     */
+      // unknown sequence
+      /**
+       * 如果序列是这样的形式
+       * 例子                    i=0
+       * c1 = a b c d   e f g   e1=6
+       * c2 = a b e c d h f g   e2=7
+       * 
+       * 最终比对完公共部分,剩下的序列就是未知序列
+       * 
+       * 
+       * 前序比对和后序比对完成后 此时的 i=2 e1=4 e2=5
+       * 
+       * 
+       * 
+       * c1 未知序列 c d e
+       * c2 未知序列 e c d h
+       * 
+       * c 和 d 可以复用 需要采用以下方法来进行删除或者新增
+       */
 
-    let s1 = i //标记c1未知序列的开始 [s1,e1] 代表老的孩子未知列表 
-    let s2 = i //标记c2未知序列的开始 [s2,e2] 代表新的孩子未知列表
+      let s1 = i //标记c1未知序列的开始 [s1,e1] 代表老的孩子未知列表 
+      let s2 = i //标记c2未知序列的开始 [s2,e2] 代表新的孩子未知列表
+      let moved = false //是否需要移动
+      let pos = 0 //主要用于判断是否递增，递增表示不需要移动、不递增表示需要移动
+      let patched = 0 //需要更新的数量
 
-    // 根据新的节点制造一个映射表,用老的列表去映射表中挨个查,如果存在则复用（patch）,不存在就删除老的。最后多余的新的就是需要追加的
 
-    //映射表
-    const keyToNewIndexMap = new Map() //例子 {e:2,c:3,d:4,h:5}
+      // 根据新的节点制造一个映射表,用老的列表去映射表中挨个查,如果存在则复用（patch）,不存在就删除老的。最后多余的新的就是需要追加的
+      //映射表
+      const keyToNewIndexMap = new Map() //例子 {e:2,c:3,d:4,h:5}
 
-    for (let i = s2; i <= e2; i++) {
-      const child = c2[i]
-      keyToNewIndexMap.set(child.key, i)
-    }
-
-    // 新位置序列个数
-    const toBePatched = e2 - s2 + 1 //例子中的个数是4
-    // 创建一个数组长度为新节点个数，数组全部初始化为0,用于记录哪个是新增节点 和 将新的元素映射到老的元素的索引
-    const newIndexToOldMapIndex = new Array(toBePatched).fill(0) // [5,3,4,0] // 算法最长递增子序列会用到这个数组映射表
-
-    //拿老序列到新序列映射表中查找
-    for (let i = s1; i <= e1; i++) {
-      const prevChild = c1[i]
-      const newIndex = keyToNewIndexMap.get(prevChild.key)
-      if (newIndex) { //新的里面有老的说明需要复用patch
-        // 1、保证不是0,是0就是新增元素 2、将新的元素映射到老的元素的索引  新的索引= s2+当前数组的索引 老的索引 = newIndexToOldMapIndex[当前数组索引]
-        /**
-         * 例子
-         * 假如 newIndexToOldMapIndex = [2,3,4,0] 
-         * 新索引  旧索引
-         *  0+s2    2
-         *  1+s2    3
-         *  1+s2    4
-         */
-        newIndexToOldMapIndex[newIndex - s2] = i + 1
-
-        // 填表后需要patch两个相同元素 (复用el n1.el=n2.el 后续插入的时候直接复用提高性能)
-        patch(prevChild, c2[newIndex], container)
-
-      } else {  //需要删除老的
-        unmount(prevChild)
+      for (let i = s2; i <= e2; i++) {
+        const child = c2[i]
+        keyToNewIndexMap.set(child.key, i)
       }
-    }
 
-    const queue = getSequence(newIndexToOldMapIndex) //得到newIndexToOldMapIndex 的最长递增子序列的索引
+      // 新位置序列个数
+      const toBePatched = e2 - s2 + 1 //例子中的个数是4
+      // 创建一个数组长度为新节点个数，数组全部初始化为0,用于记录哪个是新增节点 和 将新的元素映射到老的元素的索引
+      const newIndexToOldMapIndex = new Array(toBePatched).fill(0) // [5,3,4,0] // 算法最长递增子序列会用到这个数组映射表
 
-    let j = queue.length - 1 //[1,2] newIndexToOldMapIndex索引列表 也就是对应的 [3,4]不需要移动
+      //拿老序列到新序列映射表中查找
+      for (let i = s1; i <= e1; i++) {
+        const prevChild = c1[i]
+        const newIndex = keyToNewIndexMap.get(prevChild.key)
 
-    // 倒叙插入新增的元素
-    for (let i = toBePatched - 1; i >= 0; i--) {
-      const lastIndex = i + s2 // 插入元素的索引
-      const lastChild = c2[lastIndex] // 当前要插入的元素
-      const nextPos = lastIndex + 1 // 当前插入元素的下一个元素
-      const anchor = nextPos < c2.length ? c2[nextPos].el : parentAnchor
+        if (patched <= toBePatched) {
+          if (newIndex) { //新的里面有老的说明需要复用patch
+            // 1、保证不是0,是0就是新增元素 2、将新的元素映射到老的元素的索引  新的索引= s2+当前数组的索引 老的索引 = newIndexToOldMapIndex[当前数组索引]
+            /**
+             * 例子
+             * 假如 newIndexToOldMapIndex = [2,3,4,0] 
+             * 新索引  旧索引
+             *  0+s2    2
+             *  1+s2    3
+             *  1+s2    4
+             */
+            newIndexToOldMapIndex[newIndex - s2] = i + 1
 
-      if (newIndexToOldMapIndex[i] === 0) { // 还没有真实节点需要创建真实节点
-        patch(null, lastChild, container, anchor)
-      } else {
-        //直接复用el插入，此时的el已经有值了因为在#381行已经patch复用过了
-        //此处直接插入会导致重复的更新dom节点  消耗性能
-        // hostInsert(lastChild.el, container, anchor)
+            // 填表后需要patch两个相同元素 (复用el n1.el=n2.el 后续插入的时候直接复用提高性能)
+            patch(prevChild, c2[newIndex], container)
 
-        /**
-         * 例子
-         * c1 = a b [c d e  ] f g  
-         * c2 = a b [e c d h] f g 
-         * 
-         * 最终序列 a b [e c d h] f g
-         *  e c d h 都插入了一遍  事实上[c d]两个节点不需要移动
-         * 
-         * 相对于原序列[c d e]而言 我们可以直接把e 插入到c前面不就行了吗 --->使用最长递增子序列 减少dom插入操作
-         *  
-         */
+            //标记一下是否需要移动,一个小优化:有要移动的节点下次就不需要执行了，因为已经知道需要移动了，下次如果也需要移动其实是多余的
+            if (newIndex < pos && moved === false) {
+              moved = true
+            } else {
+              pos = newIndex
+            }
 
-        //如果当前索引和 newIndexToOldMapIndex的索引的最大递增子序列不等 说明当前的元素需要插入
-        // i = [3 2 1 0] queue=[2 1]  索引是倒叙的  相同的就不需要移动 不同才移动 
-        if (i !== queue[j]) {
-          hostInsert(lastChild.el, container, anchor)
+            patched++ //记录当前更新个数
+          } else {  //需要删除老的
+            unmount(prevChild)
+          }
         } else {
-          j-- // 这里做了个优化，表示不需要移动
+          unmount(prevChild)
+        }
+      }
+
+
+      const queue = getSequence(newIndexToOldMapIndex) //得到newIndexToOldMapIndex 的最长递增子序列的索引
+
+      let j = queue.length - 1 //[1,2] newIndexToOldMapIndex索引列表 也就是对应的 [3,4]不需要移动
+
+      // 倒叙插入新增的元素
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const lastIndex = i + s2 // 插入元素的索引
+        const lastChild = c2[lastIndex] // 当前要插入的元素
+        const nextPos = lastIndex + 1 // 当前插入元素的下一个元素
+        const anchor = nextPos < c2.length ? c2[nextPos].el : parentAnchor
+
+        if (newIndexToOldMapIndex[i] === 0) { // 还没有真实节点需要创建真实节点
+          patch(null, lastChild, container, anchor)
+        } else if (moved) {
+          //直接复用el插入，此时的el已经有值了因为在#381行已经patch复用过了
+          //此处直接插入会导致重复的更新dom节点  消耗性能
+          // hostInsert(lastChild.el, container, anchor)
+
+          /**
+           * 例子
+           * c1 = a b [c d e  ] f g  
+           * c2 = a b [e c d h] f g 
+           * 
+           * 最终序列 a b [e c d h] f g
+           *  e c d h 都插入了一遍  事实上[c d]两个节点不需要移动
+           * 
+           * 相对于原序列[c d e]而言 我们可以直接把e 插入到c前面不就行了吗 --->使用最长递增子序列 减少dom插入操作
+           *  
+           */
+
+          //如果当前索引和 newIndexToOldMapIndex的索引的最大递增子序列不等 说明当前的元素需要插入
+          // i = [3 2 1 0] queue=[2 1]  索引是倒叙的  相同的就不需要移动 不同才移动 
+          if (i !== queue[j]) {
+            hostInsert(lastChild.el, container, anchor)
+          } else {
+            j-- // 这里做了个优化，表示不需要移动
+          }
         }
       }
     }
@@ -571,7 +565,6 @@ export function createRenderer(renderOptions) {
     let oldEndNode = c1[oldEndIndex]; // 旧的结束节点
 
 
-    let count = 0
     while (newStartIndex <= newEndIndex && oldStartIndex <= oldEndIndex) {
       //命中情况新老children
       // const oldChildren = [
@@ -591,11 +584,9 @@ export function createRenderer(renderOptions) {
       if (!oldStartNode) {
         //当情况5命中时有可能是undefined，所以要跳过
         oldStartNode = c1[++oldStartIndex]
-        count++
       } else if (!oldEndNode) {
         //当情况5命中时有可能是undefined，所以要跳过
         oldEndNode = c1[--oldEndIndex]
-        count++
       } else if (isSameVNodeType(newStartNode, oldStartNode)) {
         //情况1：新老children的开始节点相同直接patch
         patch(oldStartNode, newStartNode, container);
@@ -799,13 +790,13 @@ export function createRenderer(renderOptions) {
         // 新孩子是数组
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           //快速diff
-          // patchKeyedChildren(c1, c2, el, anchor)
+          patchKeyedChildren(c1, c2, el, anchor)
 
           //简单diff
           // patchSimpleKeyedChild(c1, c2, el, anchor)
 
           //双端diff
-          patchDoubleSideKeyedChild(c1, c2, el, anchor)
+          // patchDoubleSideKeyedChild(c1, c2, el, anchor)
         } else {
           //卸载旧孩子
           unmountChildren(c1)
