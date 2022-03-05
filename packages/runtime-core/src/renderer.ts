@@ -222,7 +222,7 @@ export function createRenderer(renderOptions) {
 
 
   /**
-   * 有key的双端diff
+   * 有key的快速diff
    * @param c1 老的children
    * @param c2 新的children
    * @param container
@@ -478,7 +478,7 @@ export function createRenderer(renderOptions) {
   }
 
   /**
-   * 有key的简单diif
+   * 有key的简单diff
    * @param c1 
    * @param c2 
    * @param container 
@@ -489,8 +489,6 @@ export function createRenderer(renderOptions) {
     const newChildren = c2
     const oldChildren = c1
 
-    //是否删除老的节点
-    let isDel = false
     let lastIndex
     for (let i = 0; i < newChildren.length; i++) {
       const newNode = newChildren[i]
@@ -541,7 +539,6 @@ export function createRenderer(renderOptions) {
       }
     }
 
-
     //删除老的
     for (let i = 0; i < oldChildren.length; i++) {
       const oldNode = oldChildren[i]
@@ -552,6 +549,136 @@ export function createRenderer(renderOptions) {
       }
     }
 
+  }
+
+
+  /**
+   * 有key的双端diff
+   * @param c1 
+   * @param c2 
+   * @param container 
+   * @param parentAnchor 
+   */
+  const patchDoubleSideKeyedChild = (c1, c2, container, parentAnchor) => {
+    let newStartIndex = 0; // 新节点开始索引
+    let oldStartIndex = 0; // 老节点开始索引
+    let newEndIndex = c2.length - 1; // 新节点结束索引
+    let oldEndIndex = c1.length - 1; // 老节点结束索引
+
+    let newStartNode = c2[newStartIndex]; // 新的开始节点
+    let newEndNode = c2[newEndIndex]; // 新的结束节点
+    let oldStartNode = c1[oldStartIndex]; // 旧的开始节点
+    let oldEndNode = c1[oldEndIndex]; // 旧的结束节点
+
+
+    let count = 0
+    while (newStartIndex <= newEndIndex && oldStartIndex <= oldEndIndex) {
+      //命中情况新老children
+      // const oldChildren = [
+      //   h('li', { key: '1' }, '1'),
+      //   h('li', { key: '2' }, '2'),
+      //   h('li', { key: '3' }, '3'),
+      //   h('li', { key: '4' }, '4'),
+      // ]
+
+      // const newChildren = [
+      //   h('li', { key: '4' }, '4'),
+      //   h('li', { key: '2' }, '2'),
+      //   h('li', { key: '1' }, '1'),
+      //   h('li', { key: '3' }, '3'),
+      // ]
+
+      if (!oldStartNode) {
+        //当情况5命中时有可能是undefined，所以要跳过
+        oldStartNode = c1[++oldStartIndex]
+        count++
+      } else if (!oldEndNode) {
+        //当情况5命中时有可能是undefined，所以要跳过
+        oldEndNode = c1[--oldEndIndex]
+        count++
+      } else if (isSameVNodeType(newStartNode, oldStartNode)) {
+        //情况1：新老children的开始节点相同直接patch
+        patch(oldStartNode, newStartNode, container);
+
+        // 指向下一个节点
+        newStartNode = c2[++newStartIndex];
+        oldStartNode = c1[++oldStartIndex];
+      } else if (isSameVNodeType(newEndNode, oldEndNode)) {
+        //情况2：新老children的节点节点相同直接patch
+        patch(oldEndNode, newEndNode, container)
+
+        // 指向上一个节点
+        newEndNode = c2[--newEndIndex];
+        oldEndNode = c1[--oldEndIndex];
+      } else if (isSameVNodeType(newEndNode, oldStartNode)) {
+        // 情况3：新结束节点，和老的开始节点相同，patch,
+        patch(oldStartNode, newEndNode, container);
+        // 再将oldStartNode移动到oldEndNode后，
+        const anchor = oldEndNode ? hostNextSibling(oldEndNode.el) : null
+        hostInsert(oldStartNode.el, container, anchor)
+        // 更新当前newEndNode, oldStartNode索引
+        newEndNode = c2[--newEndIndex];
+        oldStartNode = c1[++oldStartIndex];
+      } else if (isSameVNodeType(newStartNode, oldEndNode)) {
+        //情况4：新开始节点和老结束节点相同， patch
+        patch(oldEndNode, newStartNode, container)
+        // 将oldEndNode插入到oldStartNode前
+        hostInsert(oldEndNode.el, container, oldStartNode.el)
+        //更新newStartNode, oldEndNode索引
+        newStartNode = c2[++newStartIndex]
+        oldEndNode = c1[--oldEndIndex]
+      } else {
+        //情况5：以上情况1、2、3、4都没命中
+        /**
+         const oldChildren = [
+          h('li', { key: '1' }, '1'),
+          h('li', { key: '2' }, '2'),
+          h('li', { key: '4' }, '4'),
+          h('li', { key: '3' }, '3'),
+        ]
+
+        const newChildren = [
+          h('li', { key: '2' }, '2'),
+          h('li', { key: '1' }, '1'),
+          h('li', { key: '3' }, '3'),
+          h('li', { key: '4' }, '4'),
+        ]
+         */
+        //在老children中找有没有newStartNode的索引
+        const oldIndex = c1.findIndex(oldNode => isSameVNodeType(oldNode, newStartNode))
+        if (oldIndex > 0) {
+          const oldNode = c1[oldIndex]
+          // 如果存在oldIndex就patch复用
+          patch(oldNode, newStartNode, container)
+          // 将找的的oldNode插入到oldStartNode前面
+          hostInsert(oldNode.el, container, oldStartNode.el)
+          // 将oldNode置空，因为已经处理过了
+          c1[oldIndex] = undefined
+        } else {
+          debugger
+          //如果在oldChildren中没有找到newStartNode，说明newStartNode是新增的node
+          //新增一个节点到头部，oldStartNode.el为锚点
+          patch(null, newStartNode, container, oldStartNode.el)
+        }
+        // 移动newStartNode的索引并重新赋值newStartNode
+        newStartNode = c2[++newStartIndex]
+      }
+    }
+
+
+    //解决新老节点个数不同有新增节点的情况
+    if (oldEndIndex < oldStartIndex && newStartIndex <= newEndIndex) {
+      // 老节点已经处理完成了，但新节点还有 c2[newStartIndex <= newEndIndex] 个新增节点
+      for (let i = newStartIndex; i <= newEndIndex; i++) {
+        const anchor = oldStartNode ? oldStartNode.el : null
+        patch(null, c2[i], container, anchor)
+      }
+    } else if (newEndIndex < newStartIndex && oldStartIndex <= oldEndIndex) {
+      //c1中多余节点卸载
+      for (let i = oldStartIndex; i <= oldEndIndex; i++) {
+        unmount(c1[i])
+      }
+    }
   }
 
   function getSequence(arr: number[]): number[] {
@@ -671,11 +798,14 @@ export function createRenderer(renderOptions) {
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         // 新孩子是数组
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-          //双端diff
+          //快速diff
           // patchKeyedChildren(c1, c2, el, anchor)
 
           //简单diff
-          patchSimpleKeyedChild(c1, c2, el, anchor)
+          // patchSimpleKeyedChild(c1, c2, el, anchor)
+
+          //双端diff
+          patchDoubleSideKeyedChild(c1, c2, el, anchor)
         } else {
           //卸载旧孩子
           unmountChildren(c1)
