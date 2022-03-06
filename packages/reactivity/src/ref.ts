@@ -44,10 +44,12 @@ export function toRefs(object) {
 
 const shallowUnwrapHandlers = {
   get(target, key, receiver) {
+    debugger
     console.log(target, key)
     return unref(Reflect.get(target, key, receiver))
   },
   set(target, key, value, receiver) {
+    debugger
     const oldValue = target[key]
     //如果oldValue是一个Ref,value不是ref
     if (isRef(oldValue) && !isRef(value)) {

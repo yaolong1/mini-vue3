@@ -1,9 +1,5 @@
-
-
 export * from './shapeFlags'
 export * from './domAttrConfig'
-
-
 
 export const isObject = (value) => typeof value === 'object' && value !== null
 export const isUndefined = (value) => typeof value === 'undefined'
@@ -23,6 +19,48 @@ const objectToString = Object.prototype.toString
 export function toTypeString(value) {
   return objectToString.call(value) //return[Object rawType]
 }
+
+const onRE = /^on[^a-z]/
+export const isOn = (key: string) => onRE.test(key)
+
+
+
+const cacheStringFunction = <T extends (str: string) => string>(fn: T): T => {
+  const cache: Record<string, string> = Object.create(null)
+  return ((str: string) => {
+    const hit = cache[str]
+    return hit || (cache[str] = fn(str))
+  }) as any
+}
+
+
+const camelizeRE = /-(\w)/g
+/**
+ * 将横线命名变为驼峰命名
+ * on-change -> onChange
+ * @private
+ */
+export const camelize = cacheStringFunction((str: string): string => {
+  return str.replace(camelizeRE, (_, c) => (c ? c.toUpperCase() : ''))
+})
+
+/**
+ * 首字母大写
+ * change -> Change
+ * @private
+ */
+export const capitalize = cacheStringFunction(
+  (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+)
+
+/**
+ * 前缀+on
+ * change -> onChange
+ * @private
+ */
+export const toHandlerKey = cacheStringFunction((str: string) =>
+  str ? `on${capitalize(str)}` : ``
+)
 
 /**
  * 拿到对象的 rawType 
@@ -54,22 +92,6 @@ export function toRawType(value) {
     data.key1 = NaN // 两个值压根没变,但是NaN === NaN 却为false最终还是会触发更新。 解决方案  使用Object.is(NaN,NaN) 为true   更加严格
  */
 export const hasChanged = (newValue, oldValue) => !Object.is(newValue, oldValue)
-
-export function hasPropsChanged(preProps, nextProps) {
-
-  const preKeys = Object.keys(preProps)
-  const nextKeys = Object.keys(nextProps)
-
-  //长度不同则有变化
-  if (preKeys.length !== nextKeys.length) return true
-
-  //长度相等的情况，比较值是否相等
-  for (let key in nextKeys) {
-    if (preProps[key] !== nextProps[key]) return true
-  }
-  return false
-}
-
 
 export const isFunction = (value) => typeof value === 'function'
 

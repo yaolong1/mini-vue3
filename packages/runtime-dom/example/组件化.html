@@ -15,9 +15,8 @@
   <script src="../dist/runtime-dom.global.js"></script>
   <script src="http://unpkg.com/vue"></script>
   <script>
-    const { effect, reactive, ref, computed, watch, createApp, h,onMounted } = MiniVue3RuntimeDOM
-
-    createApp({
+    const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs } = MiniVue3RuntimeDOM
+    const App = {
       data() {
         return {
           counter: 1,
@@ -35,7 +34,7 @@
       },
       setup(props) {
 
-        onMounted(()=>{
+        onMounted(() => {
           console.log('============Mounted==============')
         })
         return {}
@@ -48,7 +47,10 @@
           }
         }, `${this.counter} + ${this.counter2}`)
       },
-    }).mount('#app')
+    }
+    createApp(App).mount('#app')
+
+
 
   </script>
 </body>
