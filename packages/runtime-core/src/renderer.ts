@@ -3,7 +3,7 @@ import { effect, ReactiveEffect } from '@mini-vue3/reactivity';
 import {ShapeFlags } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
 
-import { createAppAPI } from './apiCreateAppAPI'
+import { createAppAPI } from './apiCreateApp'
 import { createComponentInstance, setupComponent } from './component';
 import { queueJob } from './scheduler';
 import { hasPropsChanged } from './componentRenderUtils';
