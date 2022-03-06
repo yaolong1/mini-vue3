@@ -1,21 +1,33 @@
 import { hasOwn } from "@mini-vue3/shared"
 
+
+const publicPropertiesMap = {
+  // i为组件实例对象
+  $el: (i) => i.vnode.el,
+  $emit: (i) => i.emit,
+  $slots: (i) => i.slots,
+  $props: (i) => i.props,
+};
+
 // render(){}上下文代理对象处理
 export const PublicInstanceProxyHandler = {
   get({ _: instance }, key) {
     const { setupState, props, data } = instance
-    //如果在render函数中使用proxy.key调用某个setupState, props
-    // 根据当前的key，断是否在setupState中还是props中，如果在就直接返回key对应的setupState或props
-    if (hasOwn(setupState, key)) {
-      return setupState[key]
-    } else if (hasOwn(data, key)) {
-      return data[key]
-    } else if (hasOwn(props, key)) {
-      return props[key]
+    if (key.startsWith('$')) {
+      return (publicPropertiesMap[key] && publicPropertiesMap[key](instance))
     } else {
-      // 其他的情况如 $....
-      // console.log('我是其他情况 proxy--get当前key=', key)
-      console.error('没找到当前key', key)
+      //如果在render函数中使用proxy.key调用某个setupState, props
+      // 根据当前的key，断是否在setupState中还是props中，如果在就直接返回key对应的setupState或props
+      if (hasOwn(setupState, key)) {
+        return setupState[key]
+      } else if (hasOwn(data, key)) {
+        return data[key]
+      } else if (hasOwn(props, key)) {
+        return props[key]
+      } else {
+        // console.log('我是其他情况 proxy--get当前key=', key)
+        console.error('没找到当前key', key)
+      }
     }
   },
   set({ _: instance }, key, value) {

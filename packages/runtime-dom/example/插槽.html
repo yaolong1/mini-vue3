@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>插槽</title>
+</head>
+
+<body>
+
+  <div id="app"></div>
+
+  <script src="../dist/runtime-dom.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
+  <script>
+    const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs, Fragment } = MiniVue3RuntimeDOM
+
+
+    /**
+     * Child组件
+      <template>
+        <header>
+          <slot name="header" />
+        </header>
+        <div>
+          <slot name="body" />
+        </div>
+        <footer>
+          <slot name="footer" />
+        </footer>
+      </template>
+     */
+
+    const Child = {
+      render() {
+        return h(Fragment, [
+          h('header', this.$slots.header()),
+          h('body', this.$slots.body()),
+          h('footer', this.$slots.footer()),
+        ])
+      },
+    }
+
+    /**
+     * App组件使用Child
+     <template>                                        
+        <Child>
+          <template #header>
+            <div>我是头部</div>   
+          </template>
+          <template #body>
+            <div>我是身体</div>   
+          </template>
+          <template #footer>
+            <div>我是尾部</div>   
+          </template>
+        </Child>
+      </template>
+     */
+    const App = {
+      render() {
+        return h(Child, {}, {
+          header() {
+            return h('div', {}, '我是头部')
+          },
+          body() {
+            return h('div', {}, '我是身体')
+          },
+          footer() {
+            return h('div', {}, '我是尾部')
+          },
+        })
+      },
+    }
+    createApp(App).mount('#app')
+
+
+
+  </script>
+</body>
+
+</html>
