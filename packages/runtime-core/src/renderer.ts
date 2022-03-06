@@ -1,10 +1,10 @@
 import { Fragment, isSameVNodeType, normalizeVNode, Text } from './vnode';
 import { effect, ReactiveEffect } from '@mini-vue3/reactivity';
-import { ShapeFlags } from '@mini-vue3/shared';
+import { hasPropsChanged, ShapeFlags } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
 
 import { createAppAPI } from './apiCreateAppAPI'
-import { createComponentInstance, setupComponent } from './component';
+import { createComponentInstance, resolveProps, setupComponent } from './component';
 import { queueJob } from './scheduler';
 
 let onMountedFn
@@ -77,13 +77,54 @@ export function createRenderer(renderOptions) {
     update()
   }
 
+
+  /**
+   * 组件更新逻辑
+   * @param n1 
+   * @param n2 
+   * @param container 
+   * @param anchor 
+   */
+  function patchComponent(n1, n2, container, anchor) {
+    //复用老的组件实例
+    let instance = n2.component = n1.component
+    const { props, attrs } = instance
+
+
+    // 比对props、attrs是否更新，有更新则更新
+    if (hasPropsChanged(n1.props, n2.props)) {
+      //将新的组件实例上的props和attrs解析出来
+      const { props: newProps, attrs: newAttrs } = resolveProps(n2.type.props, n2.props)
+      //props
+      patchComponentProps(props, newProps)
+      //attrs
+      patchComponentProps(attrs, newAttrs)
+    }
+  }
+
+  function patchComponentProps(props, newProps) {
+    for (let key in newProps) {
+      const prop = props[key]
+      const newProp = newProps[key]
+      //不同就更新
+      if (prop !== newProp) {
+        props[key] = newProps[key]
+      }
+    }
+    for (let key in props) {
+      if (!(key in newProps)) {
+        delete props[key]
+      }
+    }
+  }
+
   const processComponent = (n1, n2, container, anchor) => {
     if (n1 == null) {
       //组件的挂载
       mountComponent(n2, container, anchor)
     } else {
       //组件的更新
-      console.log('组件 更新')
+      patchComponent(n1, n2, container, anchor)
     }
   }
 
@@ -206,7 +247,7 @@ export function createRenderer(renderOptions) {
     // 2、给组件的实例进行赋值
     setupComponent(instance)
     //创建实例之后
-    created && created()
+    created && created.call(instance.proxy)
     // 3、调用render方法实现组件的渲染逻辑（首次渲染即需要render函数中所有依赖的响应式对象 =>依赖收集）
     // 这里就会使用reactiveEffect，因为视图和数据时双向绑定的 数据变->视图变
     setupRenderEffect(initialVNode, instance, container, anchor)
@@ -867,12 +908,12 @@ export function createRenderer(renderOptions) {
   }
 
 
-  const patchProps = (oldProps, newProps, el) => {
-    if (oldProps === newProps) return;
+  const patchProps = (props, newProps, el) => {
+    if (props === newProps) return;
 
     //新的有老的没有 添加新的
     for (let key in newProps) {
-      const prevProp = oldProps[key]
+      const prevProp = props[key]
       const nextProp = newProps[key]
       if (prevProp != nextProp) {
         hostPatchProp(el, key, prevProp, nextProp)
@@ -880,9 +921,9 @@ export function createRenderer(renderOptions) {
     }
 
     //老的没有新的有 删除老的
-    for (let key in oldProps) {
+    for (let key in props) {
       if (!(key in newProps)) {
-        hostPatchProp(el, key, oldProps[key], null)
+        hostPatchProp(el, key, props[key], null)
       }
     }
   }
@@ -898,10 +939,10 @@ export function createRenderer(renderOptions) {
     //新node复用旧node的el
     let el = n2.el = n1.el
 
-    const oldProps = n1.props || {}
+    const props = n1.props || {}
     const newProps = n2.props || {}
     //更新参数
-    patchProps(oldProps, newProps, el)
+    patchProps(props, newProps, el)
     //更新孩子
     patchChildren(n1, n2, el)
   }

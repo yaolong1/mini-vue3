@@ -1,4 +1,4 @@
-import { reactive, shallowReactive } from "@mini-vue3/reactivity"
+import { reactive, shallowReactive, shallowReadonly } from "@mini-vue3/reactivity"
 import { hasOwn, isFunction, isObject } from "@mini-vue3/shared"
 
 
@@ -122,7 +122,8 @@ const PublicInstanceProxyHandler = {
       return props[key]
     } else {
       // 其他的情况如 $....
-      console.log('我是其他情况 proxy--get当前key=', key)
+      // console.log('我是其他情况 proxy--get当前key=', key)
+      console.error('没找到当前key', key)
     }
   },
   set({ _: instance }, key, value) {
@@ -136,7 +137,8 @@ const PublicInstanceProxyHandler = {
       console.warn('Props are readonly')
       return false
     } else {
-      console.log('我是其他情况proxy--set当前key=', key)
+      // console.log('我是其他情况proxy--set当前key=', key)
+      console.error('没找到当前key', key)
     }
     return true
   },
@@ -149,15 +151,20 @@ const PublicInstanceProxyHandler = {
  */
 export function setupStatefulComponent(instance) {
   const Component = instance.type
-  const { setup } = Component
+  const { setup, render } = Component
+
+  // 创建一个代理对象来聚合所有响应式的对象
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandler)
   if (setup) {
     const setupContext = createSetupContext(instance)
     //setup()返回值有两种情况，有可能返回 h() ==》vnode,也有可能返回一个{} ==> setupState
-    let setupResult = setup(instance.props, setupContext)
+
+    //setup中的props是只读的
+    let setupResult = setup(shallowReadonly(instance.props), setupContext)
 
     //如果setup是函数就是一个render()
     if (isFunction(setupResult)) {
+      if (render) console.error('setup返回渲染函数,忽略render函数')
       instance.render = setupResult
       // 如果是对象就是setupState
     } else if (isObject(setupResult)) {
@@ -168,7 +175,7 @@ export function setupStatefulComponent(instance) {
   // 如果执行完setup发现没有instance.render或者setup是空的,
   if (!instance.render) {
     // 执行组件的render并值给instance.render
-    instance.render = Component.render
+    instance.render = render
 
     // 如果组件也没有写render函而是写的template => 就要执行模板编译把template编译成render函数
     //TODO
