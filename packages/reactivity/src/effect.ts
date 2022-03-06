@@ -124,7 +124,7 @@ export function pauseTracking() {
 
 //开启跟踪（依赖收集）
 export function enableTracking() {
-  shouldTrack = false
+  shouldTrack = true
 }
 
 const targetMap = new WeakMap() //使用weakMap保存响应式对象所依赖的依赖集 const state = reactive({age: 1})

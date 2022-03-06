@@ -1,4 +1,26 @@
 
+export function shouldUpdateComponent(preVNode, nextVNode) {
+  const { props: preProps } = preVNode
+  const { props: nextProps } = nextVNode
+
+  //完全相等不更新
+  if (preProps === nextProps) {
+    return false
+  }
+
+  //之前没有，现在有,有可能要更新，根据要更新的props来确认是否更新
+  if (!preProps) {
+    return !!nextProps
+  }
+
+  //之前有、现在没有,一定要更新
+  if (!nextProps) {
+    return true
+  }
+
+  //更细粒度的判断
+  return hasPropsChanged(preProps, nextProps)
+}
 
 /**
  * 比较参数是否改变

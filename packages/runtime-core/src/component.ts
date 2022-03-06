@@ -1,10 +1,28 @@
-import { shallowReadonly } from "@mini-vue3/reactivity"
+import { proxyRefs, shallowReadonly } from "@mini-vue3/reactivity"
 import { isFunction, isObject } from "@mini-vue3/shared"
+import { enableTracking, pauseTracking } from "packages/reactivity/src/effect"
 import { emit } from "./componentEmits"
 import { initProps } from "./componentProps"
 import { PublicInstanceProxyHandler } from "./componentPublicInstance"
 import { initSlots } from "./componentSlots"
 
+//生命周期枚举
+export const enum LifecycleHooks {
+  BEFORE_CREATE = 'bc',
+  CREATED = 'c',
+  BEFORE_MOUNT = 'bm',
+  MOUNTED = 'm',
+  BEFORE_UPDATE = 'bu',
+  UPDATED = 'u',
+  BEFORE_UNMOUNT = 'bum',
+  UNMOUNTED = 'um',
+  DEACTIVATED = 'da',
+  ACTIVATED = 'a',
+  RENDER_TRIGGERED = 'rtg',
+  RENDER_TRACKED = 'rtc',
+  ERROR_CAPTURED = 'ec',
+  SERVER_PREFETCH = 'sp'
+}
 
 export function createComponentInstance(vnode) {
   const type = vnode.type // 用户自己传入的属性
@@ -25,7 +43,13 @@ export function createComponentInstance(vnode) {
     render: null, // 组件的渲染函数
     emit: null, // 事件的触发
     exposed: {}, // 暴露的方法
-    isMounted: false // 是否被挂载完成
+    isMounted: false, // 是否被挂载完成
+    bm: null,//beforeMounted
+    m: null,//mounted
+    bu: null,//beforeUpdate
+    u: null,//updated
+    um: null,//unmount
+    bum: null,//beforeUnmount
   }
 
   instance.ctx = { _: instance } // 后续会对它进行代理
@@ -64,7 +88,15 @@ export function setupStatefulComponent(instance) {
     //setup()返回值有两种情况，有可能返回 h() ==》vnode,也有可能返回一个{} ==> setupState
 
     //setup中的props是只读的
+    pauseTracking() // 暂停收集依赖，setup中的
+
+    //设置当前实例
+    setCurrentInstance(instance)
     let setupResult = setup(shallowReadonly(instance.props), setupContext)
+    setCurrentInstance(null)
+
+    enableTracking()
+
 
     //如果setup是函数就是一个render()
     if (isFunction(setupResult)) {
@@ -72,7 +104,7 @@ export function setupStatefulComponent(instance) {
       instance.render = setupResult
       // 如果是对象就是setupState
     } else if (isObject(setupResult)) {
-      instance.setupState = setupResult
+      instance.setupState = proxyRefs(setupResult)
     }
   }
 
@@ -103,3 +135,13 @@ export function setupComponent(instance) {
   setupStatefulComponent(instance)
 }
 
+//全局变量，用于保存当前正在初始化的组件实例
+export let currentInstance
+
+export function setCurrentInstance(instance) {
+  currentInstance = instance
+}
+
+export function getCurrentInstance() {
+  return currentInstance
+}

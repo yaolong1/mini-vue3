@@ -1,6 +1,8 @@
 export * from '@mini-vue3/reactivity'
 
-export { createRenderer,onMounted } from './renderer'
+export { createRenderer } from './renderer'
+
+export * from './apiLifecycle'
 
 export { h } from './h'
 

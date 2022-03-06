@@ -1,19 +1,13 @@
 import { Fragment, isSameVNodeType, normalizeVNode, Text } from './vnode';
 import { effect, ReactiveEffect } from '@mini-vue3/reactivity';
-import {ShapeFlags } from '@mini-vue3/shared';
+import { invokeArrayFns, ShapeFlags } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
 
 import { createAppAPI } from './apiCreateApp'
 import { createComponentInstance, setupComponent } from './component';
 import { queueJob } from './scheduler';
-import { hasPropsChanged } from './componentRenderUtils';
+import { shouldUpdateComponent } from './componentRenderUtils';
 import { resolveProps } from './componentProps';
-
-let onMountedFn
-
-export function onMounted(fn) {
-  onMountedFn = fn
-}
 
 
 /**
@@ -46,7 +40,7 @@ export function createRenderer(renderOptions) {
     // 核心是调用render, 数据发生变化就会重新调用render
     const { beforeMount, mounted, beforeUpdate, updated } = initialVNode.type
     const componentUpdateFn = () => {
-      const { proxy, attrs } = instance
+      const { proxy, attrs,bm,m,u,bu } = instance
 
       if (!instance.isMounted) {
         // 初次挂载 会调用render方法
@@ -54,20 +48,39 @@ export function createRenderer(renderOptions) {
         // 当渲染完成之后，如果数据发生了改变会再次执行当前方法
         const subTree = instance.subTree = instance.render.call(proxy, proxy) //渲染调用h方法
         // 真正开始渲染组件 即渲染subTree //前面的逻辑其实就是为了得到suTree,初始化组件实例为组件实例赋值之类的操作
+        if (bm) { 
+          // 触发onBeforeMounted
+          invokeArrayFns(bm)
+        }
         beforeMount && beforeMount.call(proxy) // beforeMount钩子
         patch(null, subTree, container, anchor)
         initialVNode.el = subTree.el
         instance.isMounted = true
-        onMountedFn && onMountedFn()
+
+        if (m) { 
+          // 触发onMounted
+          invokeArrayFns(m)
+        }
         mounted && mounted.call(proxy)
       } else {
+        
         // 组件更新
         //diff算法 比较两课前后的树 更新\删除
         console.log('组件更新逻辑')
         const prevTree = instance.subTree
         const nextTree = instance.subTree = instance.render.call(proxy, proxy)
+
+        if (bu) { 
+          // 触发onBeforeUpdate
+          invokeArrayFns(bu)
+        }
         beforeUpdate && beforeUpdate.call(proxy)
         patch(prevTree, nextTree, container, anchor)
+
+        if (u) { 
+          // 触发onUpdated
+          invokeArrayFns(u)
+        }
         updated && updated.call(proxy)
       }
     }
@@ -92,9 +105,8 @@ export function createRenderer(renderOptions) {
     let instance = n2.component = n1.component
     const { props, attrs } = instance
 
-
     // 比对props、attrs是否更新，有更新则更新
-    if (hasPropsChanged(n1.props, n2.props)) {
+    if (shouldUpdateComponent(n1, n2)) {
       //将新的组件实例上的props和attrs解析出来
       const { props: newProps, attrs: newAttrs } = resolveProps(n2.type.props, n2.props)
       //props
@@ -102,6 +114,7 @@ export function createRenderer(renderOptions) {
       //attrs
       patchComponentProps(attrs, newAttrs)
     }
+
   }
 
   function patchComponentProps(props, newProps) {
@@ -121,6 +134,7 @@ export function createRenderer(renderOptions) {
   }
 
   const processComponent = (n1, n2, container, anchor) => {
+    
     if (n1 == null) {
       //组件的挂载
       mountComponent(n2, container, anchor)
@@ -707,7 +721,7 @@ export function createRenderer(renderOptions) {
           // 将oldNode置空，因为已经处理过了
           c1[oldIndex] = undefined
         } else {
-          debugger
+          
           //如果在oldChildren中没有找到newStartNode，说明newStartNode是新增的node
           //新增一个节点到头部，oldStartNode.el为锚点
           patch(null, newStartNode, container, oldStartNode.el)

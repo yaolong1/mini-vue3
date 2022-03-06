@@ -33,6 +33,16 @@ const cacheStringFunction = <T extends (str: string) => string>(fn: T): T => {
   }) as any
 }
 
+/**
+ * 执行数组中的函数
+ * @param fns 
+ * @param arg 
+ */
+export const invokeArrayFns = (fns: Function[], arg?: any) => {
+  for (let i = 0; i < fns.length; i++) {
+    fns[i](arg)
+  }
+}
 
 const camelizeRE = /-(\w)/g
 /**
