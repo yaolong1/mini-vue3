@@ -68,7 +68,7 @@ export function watch(source, cb, options) {
   if (options && options.immediate) {
     job()
   } else {
-    // 没运行job之前需要执行一次用于手机依赖，并把初始值（直接执行的effect.run()就是初始值）设置为老值
+    // 没运行job之前需要执行一次用于收集依赖，并把初始值（直接执行的effect.run()就是初始值）设置为老值
     oldValue = effect.run()
   }
 }

@@ -1,4 +1,4 @@
-import { isIntegerKey, isMap, isSymbol } from '@mini-vue3/shared';
+import { extend, isIntegerKey, isMap, isSymbol } from '@mini-vue3/shared';
 import { isArray } from '@mini-vue3/shared';
 import { createDep } from './dep';
 import { TriggerOpTypes } from './operators';
@@ -29,6 +29,7 @@ let effectStack = [] //防止嵌套effect 导致当前的activeEffect错乱 用�
 export function effect(fn, options: any = {}) {
   const _effect = new ReactiveEffect(fn)
 
+  extend(_effect, options)
   //非懒加载就立即执行
   if (!options.lazy) {
     _effect.run()

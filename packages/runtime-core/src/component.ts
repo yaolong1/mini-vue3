@@ -1,10 +1,10 @@
-import { reactive } from "@mini-vue3/reactivity"
+import { reactive, shallowReactive } from "@mini-vue3/reactivity"
 import { hasOwn, isFunction, isObject } from "@mini-vue3/shared"
 
 
 export function createComponentInstance(vnode) {
   const type = vnode.type // 用户自己传入的属性
-
+  const data = (type.data && isFunction(type.data) ? type.data() : type.data) || {}
   const instance = {
     vnode, // 实例对应的虚拟节点
     type, // 组件对象
@@ -13,6 +13,8 @@ export function createComponentInstance(vnode) {
     props: {}, // 组件属性 //组件中定义了的propsOptions叫做props
     attrs: {}, // 除了props中的属性 //没定义的叫attrs
     slots: {}, // 组件的插槽
+    data, //data响应式对象
+    update: () => { },
     setupState: {}, // 组件中setup的返回值 {方法，属性} 
     propsOptions: type.props || {}, // 组件中的props选项 const component = {props:{title:{type:String,default:'xxx'}}}
     proxy: null, // 实例的代理对象  
@@ -32,28 +34,41 @@ export function createComponentInstance(vnode) {
  * 初始化组件实例的props 主要是给实例中的props和attrs赋值
  * @param instance  组件实例
  * @param rawProps  传入的props =>const app = createApp(component,传入的props)
+ * @param data  响应式对象
  */
 export function initProps(instance, rawProps) {
+  instance.data = reactive(instance.data)
+  const { props, attrs } = resolveProps(instance.propsOptions, rawProps)
+  instance.props = props
+  instance.attrs = attrs
+}
 
+/**
+ * 解析组件props参数、attrs参数
+ * @param propsOptions 
+ * @param rawProps 
+ * @returns 
+ */
+export function resolveProps(propsOptions, rawProps) {
   /**
-   * const 组件 = {
-   *  props:{
-   *    name:{}
-   *  }
-   * }
-   * 
-   * createApp(组件,{name:'xxx',id:'a'})
-   * 
-   * 其中name在组件中的props中定义了 所以是一个props
-   * id没有在组件中定义所以是一个普通的属性attrs
-   */
+     * const 组件 = {
+     *  props:{
+     *    name:{}
+     *  }
+     * }
+     * 
+     * createApp(组件,{name:'xxx',id:'a'})
+     * 
+     * 其中name在组件中的props中定义了 所以是一个props
+     * id没有在组件中定义所以是一个普通的属性attrs
+     */
 
 
   const props = {} //组件中定义了的props 
   const attrs = {} //组件中未定义了的props
 
   //找到组件中定义的属性key //可能还要类型的校验
-  const options = Object.keys(instance.propsOptions)
+  const options = Object.keys(propsOptions)
   if (rawProps) {
     for (const key in rawProps) {
       const value = rawProps[key]
@@ -64,11 +79,12 @@ export function initProps(instance, rawProps) {
       }
     }
   }
-  instance.props = reactive(props)
-  instance.attrs = attrs //静态属性非响应式
-  console.log('初始化props、attrs', instance)
-}
 
+  return {
+    props: shallowReactive(props),
+    attrs
+  }
+}
 
 //创建setup的上下文
 function createSetupContext(instance) {
@@ -95,11 +111,13 @@ export function initSlots(instance, children) {
 // render(){}上下文代理对象处理
 const PublicInstanceProxyHandler = {
   get({ _: instance }, key) {
-    const { setupState, props } = instance
+    const { setupState, props, data } = instance
     //如果在render函数中使用proxy.key调用某个setupState, props
     // 根据当前的key，断是否在setupState中还是props中，如果在就直接返回key对应的setupState或props
     if (hasOwn(setupState, key)) {
       return setupState[key]
+    } else if (hasOwn(data, key)) {
+      return data[key]
     } else if (hasOwn(props, key)) {
       return props[key]
     } else {
@@ -108,10 +126,12 @@ const PublicInstanceProxyHandler = {
     }
   },
   set({ _: instance }, key, value) {
-    const { setupState, props } = instance
+    const { setupState, props, data } = instance
     // 分别设置值，props在组件中是只读的
     if (hasOwn(setupState, key)) {
       setupState[key] = value
+    } else if (hasOwn(data, key)) {
+      data[key] = value
     } else if (hasOwn(props, key)) {
       console.warn('Props are readonly')
       return false
@@ -162,7 +182,7 @@ export function setupComponent(instance) {
   // 组件的虚拟节点
   const { props, children } = instance.vnode
 
-  // 组件的props初始化、 attrs初始化
+  // 组件的props初始化、 attrs初始化、data初始化
   initProps(instance, props)
   // 插槽初始化
   //TODO

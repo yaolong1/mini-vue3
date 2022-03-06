@@ -1,10 +1,17 @@
 import { Fragment, isSameVNodeType, normalizeVNode, Text } from './vnode';
-import { ReactiveEffect } from '@mini-vue3/reactivity';
+import { effect, ReactiveEffect } from '@mini-vue3/reactivity';
 import { ShapeFlags } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
 
 import { createAppAPI } from './apiCreateAppAPI'
 import { createComponentInstance, setupComponent } from './component';
+import { queueJob } from './scheduler';
+
+let onMountedFn
+
+export function onMounted(fn) {
+  onMountedFn = fn
+}
 
 
 /**
@@ -35,6 +42,7 @@ export function createRenderer(renderOptions) {
     console.log('初始化调用render')
     // 创建渲染effect
     // 核心是调用render, 数据发生变化就会重新调用render
+    const { beforeMount, mounted, beforeUpdate, updated } = initialVNode.type
     const componentUpdateFn = () => {
       const { proxy, attrs } = instance
 
@@ -44,22 +52,28 @@ export function createRenderer(renderOptions) {
         // 当渲染完成之后，如果数据发生了改变会再次执行当前方法
         const subTree = instance.subTree = instance.render.call(proxy, proxy) //渲染调用h方法
         // 真正开始渲染组件 即渲染subTree //前面的逻辑其实就是为了得到suTree,初始化组件实例为组件实例赋值之类的操作
+        beforeMount && beforeMount.call(proxy) // beforeMount钩子
         patch(null, subTree, container, anchor)
         initialVNode.el = subTree.el
         instance.isMounted = true
+        onMountedFn && onMountedFn()
+        mounted && mounted.call(proxy)
       } else {
         // 组件更新
         //diff算法 比较两课前后的树 更新\删除
         console.log('组件更新逻辑')
         const prevTree = instance.subTree
         const nextTree = instance.subTree = instance.render.call(proxy, proxy)
+        beforeUpdate && beforeUpdate.call(proxy)
         patch(prevTree, nextTree, container, anchor)
+        updated && updated.call(proxy)
       }
     }
 
-    const effect = new ReactiveEffect(componentUpdateFn)
+    // instance.update = effect(componentUpdateFn, { scheduler: () => queueJob(instance.update) })
+    const effect = new ReactiveEffect(componentUpdateFn, () => queueJob(instance.update))
     // 调用update方法就会执行 componentUpdateFn
-    const update = effect.run.bind(effect)
+    const update = instance.update = effect.run.bind(effect)
     update()
   }
 
@@ -184,11 +198,15 @@ export function createRenderer(renderOptions) {
   // 组件的挂载流程
   const mountComponent = (initialVNode, container, anchor) => {
     // 将组件的vnode渲染到容器中
-
+    const componentOptions = initialVNode.type
+    const { beforeCreate, created } = componentOptions
+    beforeCreate && beforeCreate()
     // 1、给组件创造一个组件实例 
     const instance = initialVNode.component = createComponentInstance(initialVNode)
     // 2、给组件的实例进行赋值
     setupComponent(instance)
+    //创建实例之后
+    created && created()
     // 3、调用render方法实现组件的渲染逻辑（首次渲染即需要render函数中所有依赖的响应式对象 =>依赖收集）
     // 这里就会使用reactiveEffect，因为视图和数据时双向绑定的 数据变->视图变
     setupRenderEffect(initialVNode, instance, container, anchor)
