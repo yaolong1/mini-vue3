@@ -1,12 +1,12 @@
 import { Fragment, isSameVNodeType, normalizeVNode, Text } from './vnode';
 import { effect, ReactiveEffect } from '@mini-vue3/reactivity';
-import { invokeArrayFns, ShapeFlags } from '@mini-vue3/shared';
+import { invokeArrayFns, ShapeFlags, isFunction } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
 
 import { createAppAPI } from './apiCreateApp'
 import { createComponentInstance, setupComponent } from './component';
 import { queueJob } from './scheduler';
-import { shouldUpdateComponent } from './componentRenderUtils';
+import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
 import { resolveProps } from './componentProps';
 
 
@@ -40,13 +40,13 @@ export function createRenderer(renderOptions) {
     // 核心是调用render, 数据发生变化就会重新调用render
     const { beforeMount, mounted, beforeUpdate, updated } = initialVNode.type
     const componentUpdateFn = () => {
-      const { proxy, attrs, bm, m, u, bu } = instance
+      const { bm, m, u, bu, proxy } = instance
 
       if (!instance.isMounted) {
         // 初次挂载 会调用render方法
         // 渲染页面的时候响应式对象会取值,取值的时候会进行依赖收集 收集对应的effect
         // 当渲染完成之后，如果数据发生了改变会再次执行当前方法
-        const subTree = instance.subTree = instance.render.call(proxy, proxy) //渲染调用h方法
+        const subTree = instance.subTree = renderComponentRoot(instance) //渲染调用h方法
         // 真正开始渲染组件 即渲染subTree //前面的逻辑其实就是为了得到suTree,初始化组件实例为组件实例赋值之类的操作
         if (bm) {
           // 触发onBeforeMounted
@@ -269,6 +269,7 @@ export function createRenderer(renderOptions) {
 
   // 组件的挂载流程
   const mountComponent = (initialVNode, container, anchor) => {
+
     // 将组件的vnode渲染到容器中
     const componentOptions = initialVNode.type
     const { beforeCreate, created } = componentOptions

@@ -1,5 +1,5 @@
 import { reactive, shallowReactive } from "@mini-vue3/reactivity"
-import { isOn } from "@mini-vue3/shared"
+import { extend, isOn } from "@mini-vue3/shared"
 
 /**
  * 初始化组件实例的props 主要是给实例中的props和attrs赋值
@@ -7,10 +7,16 @@ import { isOn } from "@mini-vue3/shared"
  * @param rawProps  传入的props =>const app = createApp(component,传入的props)
  * @param data  响应式对象
  */
- export function initProps(instance, rawProps) {
+export function initProps(instance, rawProps, isStateful) {
   instance.data = reactive(instance.data)
   const { props, attrs } = resolveProps(instance.propsOptions, rawProps)
-  instance.props = props
+
+  if (isStateful) {
+    instance.props = props
+  } else {
+    //当前的组件是无状态的，是一个函数式组件，直接props == attrs
+    instance.props = attrs
+  }
   instance.attrs = attrs
 }
 
@@ -20,7 +26,7 @@ import { isOn } from "@mini-vue3/shared"
  * @param rawProps 
  * @returns 
  */
- export function resolveProps(propsOptions, rawProps) {
+export function resolveProps(propsOptions, rawProps) {
   /**
      * const 组件 = {
      *  props:{

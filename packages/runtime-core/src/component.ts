@@ -1,5 +1,5 @@
 import { proxyRefs, shallowReadonly } from "@mini-vue3/reactivity"
-import { isFunction, isObject } from "@mini-vue3/shared"
+import { isFunction, isObject, ShapeFlags } from "@mini-vue3/shared"
 import { enableTracking, pauseTracking } from "packages/reactivity/src/effect"
 import { emit } from "./componentEmits"
 import { initProps } from "./componentProps"
@@ -58,7 +58,10 @@ export function createComponentInstance(vnode) {
 }
 
 
-
+//是否是有状态的组件
+const isStatefulComponent = (instance) => {
+  return instance.vnode.shapeFlag === ShapeFlags.STATEFUL_COMPONENT
+}
 
 
 //创建setup的上下文
@@ -121,16 +124,24 @@ export function setupStatefulComponent(instance) {
 
 
 export function setupComponent(instance) {
+
+  //是否是有状态的组件
+  const isStateful = isStatefulComponent(instance)
+
   // 组件的虚拟节点
   const { props, children } = instance.vnode
   // 组件的props初始化、 attrs初始化、data初始化
-  initProps(instance, props)
+  initProps(instance, props, isStateful)
   // 插槽初始化
   //TODO
   initSlots(instance, children)
 
-  // 初始化setup
-  setupStatefulComponent(instance)
+  // 如果是普通组件就初始化setup
+  const setupResult = isStateful
+    ? setupStatefulComponent(instance)
+    : undefined
+
+  return setupResult
 }
 
 //全局变量，用于保存当前正在初始化的组件实例

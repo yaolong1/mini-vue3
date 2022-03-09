@@ -1,17 +1,23 @@
-import { isArray } from '@mini-vue3/shared';
-import { isObject, isString, ShapeFlags } from '@mini-vue3/shared';
+import { isArray, isFunction, ShapeFlags, isObject, isString } from '@mini-vue3/shared';
 
 /**
  * 创建虚拟节点
  * @param type 
  * @param props 
- * @param children 
+ * @param children  
  */
 export function createVNode(type, props, children = null) {
 
 
   // 描述虚拟节点的类型
-  const shapeFlag = isObject(type) ? ShapeFlags.COMPONENT : isString(type) ? ShapeFlags.ELEMENT : 0
+  const shapeFlag =
+    isObject(type)
+      ? ShapeFlags.STATEFUL_COMPONENT
+      : isString(type)
+        ? ShapeFlags.ELEMENT
+        : isFunction(type)
+          ? ShapeFlags.FUNCTIONAL_COMPONENT
+          : 0
 
   const vnode = { //跨平台的
     __v_isVNode: true,
@@ -29,7 +35,7 @@ export function createVNode(type, props, children = null) {
   return vnode
 }
 
-export const isVNode = (val) => !!val.__v_isVNode
+export const isVNode = (val) => val && !!val.__v_isVNode
 
 export const isSameVNodeType = (n1, n2) => n1.type === n2.type && n1.key === n2.key
 

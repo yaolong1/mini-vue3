@@ -1,3 +1,5 @@
+import { normalizeVNode } from './vnode';
+import { ShapeFlags } from '@mini-vue3/shared';
 
 export function shouldUpdateComponent(preVNode, nextVNode) {
   const { props: preProps } = preVNode
@@ -41,4 +43,51 @@ export function hasPropsChanged(preProps, nextProps) {
     if (preProps[key] !== nextProps[key]) return true
   }
   return false
+}
+
+
+/**
+ * 渲染组件
+ * @param instance 
+ */
+export function renderComponentRoot(instance) {
+  let result
+  const {
+    type: Component,
+    vnode,
+    render,
+    proxy,
+    props,
+    setupState,
+    data,
+    ctx,
+    attrs,
+    emit,
+    slots
+  } = instance
+
+  //如果是普通的状态组件
+  if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    const proxyToUse = proxy
+    result = normalizeVNode(
+      render!.call(
+        proxyToUse,
+        proxyToUse!,
+        props,
+        setupState,
+        data,
+        ctx)
+    )
+  } else {
+    //函数式组件
+    //返回的函数render
+    debugger
+    const render = Component
+    result = normalizeVNode(
+      //函数也是有length属性的，指的是形参的个数：
+      render.length > 1 ?
+        render(props, { attrs, slots, emit }) : render(props, null)
+    )
+  }
+  return result
 }
