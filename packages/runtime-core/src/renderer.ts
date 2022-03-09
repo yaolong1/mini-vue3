@@ -40,7 +40,7 @@ export function createRenderer(renderOptions) {
     // 核心是调用render, 数据发生变化就会重新调用render
     const { beforeMount, mounted, beforeUpdate, updated } = initialVNode.type
     const componentUpdateFn = () => {
-      const { proxy, attrs,bm,m,u,bu } = instance
+      const { proxy, attrs, bm, m, u, bu } = instance
 
       if (!instance.isMounted) {
         // 初次挂载 会调用render方法
@@ -48,7 +48,7 @@ export function createRenderer(renderOptions) {
         // 当渲染完成之后，如果数据发生了改变会再次执行当前方法
         const subTree = instance.subTree = instance.render.call(proxy, proxy) //渲染调用h方法
         // 真正开始渲染组件 即渲染subTree //前面的逻辑其实就是为了得到suTree,初始化组件实例为组件实例赋值之类的操作
-        if (bm) { 
+        if (bm) {
           // 触发onBeforeMounted
           invokeArrayFns(bm)
         }
@@ -57,27 +57,26 @@ export function createRenderer(renderOptions) {
         initialVNode.el = subTree.el
         instance.isMounted = true
 
-        if (m) { 
+        if (m) {
           // 触发onMounted
           invokeArrayFns(m)
         }
         mounted && mounted.call(proxy)
       } else {
-        
+
         // 组件更新
         //diff算法 比较两课前后的树 更新\删除
         console.log('组件更新逻辑')
         const prevTree = instance.subTree
         const nextTree = instance.subTree = instance.render.call(proxy, proxy)
-
-        if (bu) { 
+        if (bu) {
           // 触发onBeforeUpdate
           invokeArrayFns(bu)
         }
         beforeUpdate && beforeUpdate.call(proxy)
         patch(prevTree, nextTree, container, anchor)
 
-        if (u) { 
+        if (u) {
           // 触发onUpdated
           invokeArrayFns(u)
         }
@@ -134,7 +133,7 @@ export function createRenderer(renderOptions) {
   }
 
   const processComponent = (n1, n2, container, anchor) => {
-    
+
     if (n1 == null) {
       //组件的挂载
       mountComponent(n2, container, anchor)
@@ -203,7 +202,23 @@ export function createRenderer(renderOptions) {
     if (vnode.type === Fragment) {
       vnode.children.forEach((v) => unmount(v))
     }
+
+
+    if (vnode.shapeFlag & ShapeFlags.COMPONENT) {
+      //拿到当前组件的卸载生命周期
+      const { um, bum, subTree } = vnode.component
+      //卸载组件之前
+      bum && invokeArrayFns(bum)
+
+      //卸载组件本质上是卸载subTree
+      unmount(subTree)
+      //卸载组件之后
+      um && invokeArrayFns(um)
+
+    }
     hostRemove(vnode.el)
+
+
   }
 
   /**
@@ -721,7 +736,7 @@ export function createRenderer(renderOptions) {
           // 将oldNode置空，因为已经处理过了
           c1[oldIndex] = undefined
         } else {
-          
+
           //如果在oldChildren中没有找到newStartNode，说明newStartNode是新增的node
           //新增一个节点到头部，oldStartNode.el为锚点
           patch(null, newStartNode, container, oldStartNode.el)

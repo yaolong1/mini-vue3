@@ -7,6 +7,7 @@ const publicPropertiesMap = {
   $emit: (i) => i.emit,
   $slots: (i) => i.slots,
   $props: (i) => i.props,
+  $attrs: (i) => i.attrs,
 };
 
 // render(){}上下文代理对象处理

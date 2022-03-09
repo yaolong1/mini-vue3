@@ -15,17 +15,26 @@
   <script src="../dist/runtime-dom.global.js"></script>
   <!-- <script src="http://unpkg.com/vue"></script> -->
   <script>
-    const { h, createApp, reactive } = MiniVue3RuntimeDOM
+    const { h, createApp, reactive, onBeforeUnmount, onUnmounted } = MiniVue3RuntimeDOM
 
     const Child = {
       setup(props, { emit }) {
         emit('change', 1, 2)
+        onUnmounted(() => {
+          console.log('卸载完成')
+        })
+
+
+        onBeforeUnmount(() => {
+          console.log('卸载之前')
+        })
         return () => h('div', '孩子1')
       }
     }
 
     const Child2 = {
       setup(props, { emit }) {
+
         emit('change', 3, 4)
         return () => h('div', '孩子2')
       }
@@ -51,7 +60,7 @@
           onClick: () => {
             this.f.value = !this.f.value
           }
-        }, h(Child2, { onChange: (a, b) => { console.log(a, b) } }))
+        }, h(Child2, { onChange: (a, b) => { console.log(a, b, "11111111") } }))
         return this.f.value ? app1 : app2
       }
     }

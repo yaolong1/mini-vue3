@@ -1,6 +1,7 @@
 export * from '@mini-vue3/reactivity'
 
 export { createRenderer } from './renderer'
+export { defineAsyncComponent } from './apiAsyncComponent'
 
 export * from './apiLifecycle'
 

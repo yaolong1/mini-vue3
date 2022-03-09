@@ -120,11 +120,9 @@ export function setupStatefulComponent(instance) {
 }
 
 
-
 export function setupComponent(instance) {
   // 组件的虚拟节点
   const { props, children } = instance.vnode
-
   // 组件的props初始化、 attrs初始化、data初始化
   initProps(instance, props)
   // 插槽初始化

@@ -103,7 +103,7 @@ export function toRawType(value) {
  */
 export const hasChanged = (newValue, oldValue) => !Object.is(newValue, oldValue)
 
-export const isFunction = (value) => typeof value === 'function'
+export const isFunction = (value): value is Function => typeof value === 'function'
 
 export const isString = (value) => typeof value === 'string'
 

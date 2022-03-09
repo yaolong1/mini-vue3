@@ -1,6 +1,6 @@
 import { isObject, isArray } from '@mini-vue3/shared';
 import { createVNode, isVNode } from './vnode';
-export function h(type, propsOrChildren, children) {
+export function h(type, propsOrChildren, children = null) {
   // 两个参数
   // 写法1 h('div',{})
   // 写法2 h('div',h('span'))

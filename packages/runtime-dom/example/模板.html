@@ -5,18 +5,26 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>响应式对象原型继承问题</title>
+  <title>模板</title>
 </head>
 
 <body>
-  <script src="../dist/runtime-dom.global.js"></script>
-  <script>
+  <!-- <script src="../dist/runtime-dom.global.js"></script> -->
+  <!-- <script>
     const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
 
     const data = reactive({})
     effect(() => {
 
     })
+  </script> -->
+  <script type="module">
+    import { effect, reactive, ref, computed, watch } from '../dist/runtime-dom.esm-bundler.js'
+
+    const data = reactive({ value: false })
+    effect(() => {
+      console.log(data.value)
+    })  
   </script>
 </body>
 
