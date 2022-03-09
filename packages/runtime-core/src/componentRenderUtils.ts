@@ -81,7 +81,6 @@ export function renderComponentRoot(instance) {
   } else {
     //函数式组件
     //返回的函数render
-    debugger
     const render = Component
     result = normalizeVNode(
       //函数也是有length属性的，指的是形参的个数：

@@ -1,3 +1,4 @@
+import { ShapeFlags, isFunction, isObject } from '@mini-vue3/shared';
 
 /**
  * 插槽初始化
@@ -5,9 +6,12 @@
  */
 export function initSlots(instance, children) {
 
-  if (children) {
+  if (instance.vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
+
+    //如果是一个函数说明是默认插槽
+    if (isFunction(children)) {
+      children = { default: children }
+    }
     instance.slots = children
   }
-  //TODO
-  console.log('初始化插槽 //TODO')
 }

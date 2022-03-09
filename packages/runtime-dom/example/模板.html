@@ -18,13 +18,11 @@
 
     })
   </script> -->
-  <script type="module">
-    import { effect, reactive, ref, computed, watch } from '../dist/runtime-dom.esm-bundler.js'
-
-    const data = reactive({ value: false })
-    effect(() => {
-      console.log(data.value)
-    })  
+  <script>
+    function test(m) { m = { a: m } }
+    let m = () => { console.log(1) }
+    test(m)
+    console.log(m)
   </script>
 </body>
 

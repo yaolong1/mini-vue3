@@ -60,7 +60,7 @@ export function createComponentInstance(vnode) {
 
 //是否是有状态的组件
 const isStatefulComponent = (instance) => {
-  return instance.vnode.shapeFlag === ShapeFlags.STATEFUL_COMPONENT
+  return instance.vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT
 }
 
 

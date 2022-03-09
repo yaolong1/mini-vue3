@@ -28,7 +28,7 @@ export function h(type, propsOrChildren, children = null) {
       //是普通对象-> props
       return createVNode(type, propsOrChildren)
 
-      //是数组 -> children
+      //是数组、文本 -> children
     } else {
       return createVNode(type, null, propsOrChildren)
     }
