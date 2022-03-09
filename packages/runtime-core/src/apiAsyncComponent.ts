@@ -3,6 +3,7 @@ import { isFunction } from '@mini-vue3/shared';
 import { ref, shallowRef } from '@mini-vue3/reactivity';
 import { createVNode, Text } from './vnode';
 import { rejects } from 'assert';
+import { defineComponent } from './apiDefineComponent';
 
 export interface AsyncComponentOptions<T = any> {
   loader: AsyncComponentLoader<T>,
@@ -10,7 +11,7 @@ export interface AsyncComponentOptions<T = any> {
   delay?: number, //delay毫秒没有加载完成组件就加载loadingComponent
   loadingComponent?: {},
   errorComponent?: {},
-  onError?: (err: Error, retry, fail, retries: number) => void
+  onError?: (err: Error, retry, fail, retries: number) => void // 请求发生错误交给用户处理的回调监听
 }
 
 export type AsyncComponentLoader<T = any> = () => Promise<T>
@@ -65,7 +66,7 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
   let InnerComp = null
 
   //返回一个包装组件
-  return {
+  return defineComponent({
     name: 'AsyncComponentWrapper',
     setup() {
       //定义一个ref表示组件是否加载完成
@@ -133,6 +134,6 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
       }
 
     }
-  }
+  })
 
 }

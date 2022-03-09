@@ -16,14 +16,18 @@
   <script src="http://unpkg.com/vue"></script>
   <script>
     // const { h, createApp, reactive, defineAsyncComponent } = Vue
-    const { h, createApp, reactive, defineAsyncComponent } = MiniVue3RuntimeDOM
+    const { h, createApp, reactive, defineAsyncComponent, defineComponent } = MiniVue3RuntimeDOM
 
-    const Child = {
+    const Child1 = defineComponent({
+      name: 'child',
       setup() {
         return () => h('div', {}, '测试')
       }
-    }
+    })
 
+    const Child = defineComponent(() => {
+      return () => h('div', {}, '测试')
+    })
 
     const App = {
       setup() {
@@ -34,8 +38,8 @@
           fetch: () => {
             return new Promise((resolve, reject) => {
               setTimeout(() => {
-                // resolve(Child)
-                reject(Child)
+                resolve(Child)
+                // reject(Child)
               }, 3000)
             })
           }
@@ -60,7 +64,7 @@
             }
           },
           onError: (err, retry, fail, retries) => {
-            console.log('重试', retry, fail, retries)
+            console.log("重试", retry, fail, retries)
           }
         }), {
 
