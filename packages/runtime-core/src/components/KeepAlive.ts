@@ -1,13 +1,27 @@
+import { isArray, isString } from '@mini-vue3/shared';
+import { isAsyncWrapper } from './../apiAsyncComponent';
 import { isVNode } from './../vnode';
 import { ShapeFlags } from '@mini-vue3/shared';
-import { getCurrentInstance } from "../component"
+import { getComponentName, getCurrentInstance } from "../component"
 import { ComponentRenderContext } from '../componentPublicInstance';
 import { RendererInternals } from '../renderer';
 
 
-
 function getInnerChild(vnode) {
   return vnode.shapeFlag & ShapeFlags.SUSPENSE ? vnode.ssContent! : vnode
+}
+type MatchPattern = string | RegExp | (string | RegExp)[]
+
+//匹配name是否在pattern中
+function matches(pattern: MatchPattern, name: string) {
+  if (isArray(pattern)) {
+    return pattern.some((p: string | RegExp) => matches(p, name))
+  } else if (isString(pattern)) {
+    return pattern.split(',').indexOf(name) > -1
+  } else if (pattern.test) {
+    return pattern.test(name)
+  }
+  return false
 }
 
 
@@ -24,6 +38,11 @@ export interface KeepAliveContext extends ComponentRenderContext {
 export const KeepAliveImpl = {
   name: "KeepAlive",
   __isKeepAlive: true,
+  props: {
+    include: [RegExp, String, Array],
+    exclude: [RegExp, String, Array],
+    max: [String, Number], //TODO
+  },
   setup(props, { slots }) {
     //创建一个缓存对象
     //key: vnode.type
@@ -64,21 +83,41 @@ export const KeepAliveImpl = {
       //keepAlive的默认插槽就是要被keepAlive的组件
       const children = slots.default()
       const rawVNode = children[0]
-      //如果不是组件直接渲染即可，因为非组件的虚拟节点无法被keepAlive
-      //函数式组件和普通非组件元素的虚拟节点无法被keepAlive
 
+
+      //如果长度大于1直接返回不支持，KeepAlive应该只包含一个子组件。  
       if (children.length > 1) {
         current = null
         return children
       } else if (!isVNode(rawVNode) || (!(rawVNode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) && !(rawVNode.shapeFlag & ShapeFlags.SUSPENSE))) {
+        //如果不是组件直接渲染即可，因为非组件的虚拟节点无法被keepAlive
+        //函数式组件和普通非组件元素的虚拟节点无法被keepAlive
         current = null
         return rawVNode
       }
 
 
 
-      let vnode = getInnerChild(rawVNode)
 
+
+
+      let vnode = getInnerChild(rawVNode)
+      const comp = vnode.type
+
+      //组件名
+      const name = getComponentName(isAsyncWrapper(comp) ? comp.__asyncResolved : comp)
+
+      const { include, exclude, max } = props
+      //处理include、exclude属性
+      //如果include中的值和当前vnode Name匹配说明需要keepAlive
+      //如果exclude中的值和当前vnode Name匹配说明不需要keepAlive
+      if (
+        (include && (!name || !matches(include, name))) ||
+        (exclude && name && matches(exclude, name))
+      ) {
+        current = null
+        return rawVNode
+      }
 
       //挂载时先获取缓存的组件vnode
       const cachedVNode = cache.get(rawVNode.type)

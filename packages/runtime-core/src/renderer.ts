@@ -257,8 +257,8 @@ export function createRenderer(renderOptions: RendererOptions) {
 
   const processFragment = (n1, n2, container, anchor) => {
 
-    const fragmentStartAnchor = n2.el = n1 ? n1.el : hostCreateText('fragmentStartAnchor')
-    const fragmentEndAnchor = n2.anchor = n1 ? n1.anchor : hostCreateText('fragmentEndAnchor')
+    const fragmentStartAnchor = n2.el = n1 ? n1.el : hostCreateText('')
+    const fragmentEndAnchor = n2.anchor = n1 ? n1.anchor : hostCreateText('')
 
 
     if (!n1) {

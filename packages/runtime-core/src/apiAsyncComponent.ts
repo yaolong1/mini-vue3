@@ -4,6 +4,7 @@ import { ref, shallowRef } from '@mini-vue3/reactivity';
 import { createVNode, Text } from './vnode';
 import { rejects } from 'assert';
 import { defineComponent } from './apiDefineComponent';
+import { ComponentInternalInstance, currentInstance } from './component';
 
 export interface AsyncComponentOptions<T = any> {
   loader: AsyncComponentLoader<T>,
@@ -38,7 +39,8 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
 
   //默认重试次数
   let retires = 0
-
+  //存储异步加载的组件
+  let resolvedComp
   const load = () => {
     return loader()
       //捕获错误
@@ -60,19 +62,30 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
         } else {
           throw err;
         }
+      }).then(comp => {
+        resolvedComp = comp
+        return comp
       })
   }
 
 
 
-  //存储异步加载的组件
-  let InnerComp = null
 
   //返回一个包装组件
   return defineComponent({
     name: 'AsyncComponentWrapper',
     __asyncLoader: load,
+    get __asyncResolved() {
+      return resolvedComp
+    },
     setup() {
+      const instance = currentInstance!
+
+      //如果异步组件存在直接返回
+      if (resolvedComp) {
+        return createInnerComp(resolvedComp, instance)
+      }
+
       //定义一个ref表示组件是否加载完成
       const loaded = ref(false)
 
@@ -95,7 +108,7 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
 
       //异步加载组件
       load().then(comp => {
-        InnerComp = comp
+        // resolvedComp = comp
         loaded.value = true
         console.log('异步组件加载完成')
       }).catch(err => error.value = err).finally(() => {
@@ -124,8 +137,8 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
 
       return () => {
         //加载完毕显示组件、否则加载
-        if (loaded.value) {
-          return createVNode(InnerComp, {})
+        if (loaded.value && resolvedComp) {
+          return createInnerComp(resolvedComp, instance)
         } else if ((errorComponent && error.value)) {
           // 如果存在异常且异常的自定义组件用户已经定义那么就直接返回自定义的组件
           return createVNode(errorComponent, { error: error.value })
@@ -140,4 +153,12 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
     }
   })
 
+}
+
+export function createInnerComp(
+  comp,
+  { vnode: { props, children } }: ComponentInternalInstance
+) {
+  const vnode = createVNode(comp, props, children)
+  return vnode
 }

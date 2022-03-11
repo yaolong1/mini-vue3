@@ -30,7 +30,7 @@ export type Data = Record<string, unknown>
 
 export interface ComponentInternalInstance {
   next: VNode | null,//组件要更新的节点
-  vnode: any, // 实例对应的虚拟节点
+  vnode: VNode | null, // 实例对应的虚拟节点
   type: any, // 组件对象
   subTree: any, // 组件渲染完成后返回的内容  vnode
   ctx: Data, // 组件的上下文
@@ -174,6 +174,15 @@ export function setupComponent(instance) {
 
   return setupResult
 }
+
+
+//获取组件名称
+export function getComponentName(
+  component
+) {
+  return isFunction(component) ? component.displayName || component.name : component.name
+}
+
 
 //全局变量，用于保存当前正在初始化的组件实例
 export let currentInstance

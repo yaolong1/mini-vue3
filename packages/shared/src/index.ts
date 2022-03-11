@@ -105,7 +105,7 @@ export const hasChanged = (newValue, oldValue) => !Object.is(newValue, oldValue)
 
 export const isFunction = (value): value is Function => typeof value === 'function'
 
-export const isString = (value) => typeof value === 'string'
+export const isString = (value): value is String => typeof value === 'string'
 
 export const isSymbol = (val: unknown): val is symbol => typeof val === 'symbol'
 
