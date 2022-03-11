@@ -6,6 +6,8 @@ export { defineComponent } from './apiDefineComponent'
 
 export * from './apiLifecycle'
 
+export { KeepAlive } from './components/KeepAlive'
+
 export { h } from './h'
 
 export { watch } from './apiWatch'

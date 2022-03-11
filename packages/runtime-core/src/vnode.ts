@@ -1,4 +1,18 @@
 import { isArray, isFunction, ShapeFlags, isObject, isString } from '@mini-vue3/shared';
+import { ComponentInternalInstance } from './component';
+
+
+
+export interface VNode {
+  __v_isVNode: boolean,
+  type: any,
+  props: any,
+  children: any,
+  key: string | number | symbol | null,
+  component: ComponentInternalInstance | null,
+  el: any,
+  shapeFlag: number
+}
 
 /**
  * 创建虚拟节点
@@ -7,7 +21,6 @@ import { isArray, isFunction, ShapeFlags, isObject, isString } from '@mini-vue3/
  * @param children  
  */
 export function createVNode(type, props = null, children = null) {
-
 
   // 描述虚拟节点的类型
   const shapeFlag =
@@ -18,7 +31,6 @@ export function createVNode(type, props = null, children = null) {
         : isFunction(type)
           ? ShapeFlags.FUNCTIONAL_COMPONENT
           : 0
-
   const vnode = { //跨平台的
     __v_isVNode: true,
     type, //组件、或者元素 
@@ -58,13 +70,17 @@ export function normalizeChildren(vnode, children) {
       type = ShapeFlags.SLOTS_CHILDREN
     }
   } else if (isFunction(children)) {
+    debugger
     //孩子为函数说明是默认插槽
     type = ShapeFlags.SLOTS_CHILDREN
+    children = { default: children }
   } else {
     //孩子为文本
     children = String(children)
     type = ShapeFlags.TEXT_CHILDREN
   }
+
+  vnode.children = children
   //合并权限
   vnode.shapeFlag |= type
 }

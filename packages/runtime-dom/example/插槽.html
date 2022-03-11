@@ -47,9 +47,10 @@
     const Child = {
       render() {
         return h(Fragment, [
-          h('header', this.$slots.header()),
-          h('body', this.$slots.body()),
-          h('footer', this.$slots.footer()),
+          h('default', this.$slots.default()),
+          // h('header', this.$slots.header()),
+          // h('body', this.$slots.body()),
+          // h('footer', this.$slots.footer()),
         ])
       },
     }
@@ -78,17 +79,21 @@
 
 
       render() {
-        return h(Child, {}, {
-          header() {
-            return h('div', {}, '我是头部')
-          },
-          body() {
-            return h('div', {}, '我是身体')
-          },
-          footer() {
-            return h('div', {}, '我是尾部')
-          },
-        })
+        // return h(Child, {}, {
+        //   header() {
+        //     return h('div', {}, '我是头部')
+        //   },
+        //   body() {
+        //     return h('div', {}, '我是身体')
+        //   },
+        //   footer() {
+        //     return h('div', {}, '我是尾部')
+        //   },
+        // })
+
+
+
+        return h(Child, {}, () => h('div', {}, '我是头部'))
       },
     }
     createApp(App).mount('#app')

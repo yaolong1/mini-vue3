@@ -45,7 +45,7 @@ export function resolveProps(propsOptions, rawProps) {
   const attrs = {} //组件中未定义了的props
 
   //找到组件中定义的属性key //可能还要类型的校验
-  const options = Object.keys(propsOptions)
+  const options = propsOptions && Object.keys(propsOptions)
   if (rawProps) {
     for (const key in rawProps) {
       const value = rawProps[key]

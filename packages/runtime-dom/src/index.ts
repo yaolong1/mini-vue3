@@ -11,6 +11,8 @@ import { patchProp } from './patchProp';
 
 const renderOptions = extend(nodeOps, { patchProp }) //浏览器平台渲染包含的所有api
 
+
+
 export const createApp = (rootComponent, rootProps = null) => {
   //创建一个渲染器 返回 createApp
   const { createApp } = createRenderer(renderOptions) //createRenderer 是runtime-core中的方法

@@ -6,7 +6,7 @@ export const isUndefined = (value) => typeof value === 'undefined'
 
 //继承对象
 export const extend = Object.assign
-export const isArray = (value) => Array.isArray(value)
+export const isArray = (value): value is Array<any> => Array.isArray(value)
 export const isIntegerKey = (key) => parseInt(key) + "" === key
 
 const hasOwnProperty = Object.prototype.hasOwnProperty

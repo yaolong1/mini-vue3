@@ -1,13 +1,55 @@
+import { KeepAliveContext } from './components/KeepAlive';
 import { Fragment, isSameVNodeType, normalizeVNode, Text } from './vnode';
 import { effect, ReactiveEffect } from '@mini-vue3/reactivity';
 import { invokeArrayFns, ShapeFlags, isFunction } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
 
 import { createAppAPI } from './apiCreateApp'
-import { createComponentInstance, setupComponent } from './component';
+import { createComponentInstance, setupComponent, ComponentInternalInstance } from './component';
 import { queueJob } from './scheduler';
 import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
 import { resolveProps } from './componentProps';
+import { updateSlots } from './componentSlots';
+
+
+type MoveFn = (
+  vnode: any,
+  container: any,
+  anchor?: any | null,
+  type?: any
+) => void
+
+export interface RendererInternals {
+  m: MoveFn,
+  o: RendererOptions
+}
+
+
+export interface RendererOptions {
+  patchProp(
+    el: any,
+    key: string,
+    prevValue: any,
+    nextValue: any,
+  ): void
+  insert(el: any, parent: any, anchor?: any | null): void
+  remove(el: any): void
+  createElement(
+    type: string,
+  ): any
+  createText(text: string): any
+  setText(node: any, text: string): void
+  setElementText(node: any, text: string): void
+  parentNode(node: any): any | null
+  nextSibling(node: any): any | null
+  querySelector?(selector: string): any | null
+  firstChild?(el: string): any | null
+}
+
+
+//当前组件是否是keepAlive组件
+export const isKeepAlive = (vnode): boolean => !!vnode.type.__isKeepAlive
+
 
 
 /**
@@ -15,7 +57,7 @@ import { resolveProps } from './componentProps';
  * @param renderOptions // 第三方平台的api选项 
  * @returns {render,createApp()}
  */
-export function createRenderer(renderOptions) {
+export function createRenderer(renderOptions: RendererOptions) {
 
   //第三方平台的APi
   const {
@@ -30,6 +72,8 @@ export function createRenderer(renderOptions) {
     nextSibling: hostNextSibling,
     firstChild: hostFirstChild,
   } = renderOptions
+
+
 
 
 
@@ -64,11 +108,21 @@ export function createRenderer(renderOptions) {
         mounted && mounted.call(proxy)
       } else {
 
+        // let { next, vnode } = instance
+
+        // if (next) {
+        //   next.el = vnode.el
+        // } else { 
+        //   next = vnode
+        // }
+
+
+        const nextTree = renderComponentRoot(instance)
         // 组件更新
         //diff算法 比较两课前后的树 更新\删除
         console.log('组件更新逻辑')
         const prevTree = instance.subTree
-        const nextTree = instance.subTree = instance.render.call(proxy, proxy)
+        instance.subTree = nextTree
         if (bu) {
           // 触发onBeforeUpdate
           invokeArrayFns(bu)
@@ -99,22 +153,40 @@ export function createRenderer(renderOptions) {
    * @param container 
    * @param anchor 
    */
-  function patchComponent(n1, n2, container, anchor) {
+  function updateComponent(n1, n2, container, anchor) {
     //复用老的组件实例
-    let instance = n2.component = n1.component
+    const instance = n2.component = n1.component as ComponentInternalInstance
     const { props, attrs } = instance
+
 
     // 比对props、attrs是否更新，有更新则更新
     if (shouldUpdateComponent(n1, n2)) {
+
+      //把新的node赋值给实例
+      instance.vnode = n2
+
       //将新的组件实例上的props和attrs解析出来
       const { props: newProps, attrs: newAttrs } = resolveProps(n2.type.props, n2.props)
       //props
       patchComponentProps(props, newProps)
       //attrs
       patchComponentProps(attrs, newAttrs)
+
+      //slots
+      updateSlots(instance, n2.children)
+
+      // instance.next = n2
+
+      instance.update()
+    } else {
+      n2.component = n1.component
+      n2.el = n1.el
+      instance.vnode = n2
     }
 
   }
+
+
 
   function patchComponentProps(props, newProps) {
     for (let key in newProps) {
@@ -135,11 +207,22 @@ export function createRenderer(renderOptions) {
   const processComponent = (n1, n2, container, anchor) => {
 
     if (n1 == null) {
-      //组件的挂载
-      mountComponent(n2, container, anchor)
+
+      if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
+        //如果当前组件是被缓存的组件就激活
+        (n2!.keepAliveInstance.ctx as KeepAliveContext).activate(
+          n2,
+          container,
+          anchor,
+        )
+
+      } else {
+        //组件的挂载
+        mountComponent(n2, container, anchor)
+      }
     } else {
       //组件的更新
-      patchComponent(n1, n2, container, anchor)
+      updateComponent(n1, n2, container, anchor)
     }
   }
 
@@ -174,9 +257,18 @@ export function createRenderer(renderOptions) {
 
   const processFragment = (n1, n2, container, anchor) => {
 
+    const fragmentStartAnchor = n2.el = n1 ? n1.el : hostCreateText('fragmentStartAnchor')
+    const fragmentEndAnchor = n2.anchor = n1 ? n1.anchor : hostCreateText('fragmentEndAnchor')
+
+
     if (!n1) {
+
+      //不知道做什么，推测是用于move()操作 #
+      hostInsert(fragmentStartAnchor, container, anchor)
+      hostInsert(fragmentEndAnchor, container, anchor)
+
       //不存在旧节点，直接挂载
-      mountChildren(container, n2.children)
+      mountChildren(container, n2.children, fragmentEndAnchor)
     } else {
       //存在旧节点
       patchChildren(n1, n2, container, anchor)
@@ -205,6 +297,13 @@ export function createRenderer(renderOptions) {
 
 
     if (vnode.shapeFlag & ShapeFlags.COMPONENT) {
+
+      //判断vnode是否应该keepAlive，如果是就不需要卸载,直接让其无效
+      if (vnode.shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE) {
+        (vnode.keepAliveInstance.ctx as KeepAliveContext).deactivate(vnode)
+        return
+      }
+
       //拿到当前组件的卸载生命周期
       const { um, bum, subTree } = vnode.component
       //卸载组件之前
@@ -214,6 +313,8 @@ export function createRenderer(renderOptions) {
       unmount(subTree)
       //卸载组件之后
       um && invokeArrayFns(um)
+
+      return
 
     }
     hostRemove(vnode.el)
@@ -227,10 +328,10 @@ export function createRenderer(renderOptions) {
    * @param children 
    * @param start 挂载开始的节点索引 
    */
-  const mountChildren = (container, children, start = 0) => {
+  const mountChildren = (container, children, anchor, start = 0) => {
     for (let i = start; i < children.length; i++) {
       const child = children[i] = normalizeVNode(children[i])
-      patch(null, child, container)
+      patch(null, child, container, anchor)
     }
   }
 
@@ -253,7 +354,7 @@ export function createRenderer(renderOptions) {
 
       // children是数组
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(el, children)
+      mountChildren(el, children, null)
     }
 
     //添加props
@@ -262,7 +363,6 @@ export function createRenderer(renderOptions) {
         hostPatchProp(el, key, null, props[key])
       }
     }
-
     hostInsert(el, container, anchor)
   }
 
@@ -276,6 +376,13 @@ export function createRenderer(renderOptions) {
     beforeCreate && beforeCreate()
     // 1、给组件创造一个组件实例 
     const instance = initialVNode.component = createComponentInstance(initialVNode)
+
+
+    //判断当前的组件是否是KeepAlive组件,如果是就注入内部方法
+    if (isKeepAlive(initialVNode)) {
+      (instance.ctx as KeepAliveContext).renderer = internals
+    }
+
     // 2、给组件的实例进行赋值
     setupComponent(instance)
     //创建实例之后
@@ -306,7 +413,7 @@ export function createRenderer(renderOptions) {
       unmountChildren(c1, commonLength)
     } else {
       // 挂载新节点
-      mountChildren(container, commonLength)
+      mountChildren(container, null, commonLength)
     }
   }
 
@@ -900,7 +1007,7 @@ export function createRenderer(renderOptions) {
 
         //新孩子是数组挂载新孩子
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-          mountChildren(el, c2)
+          mountChildren(el, c2, anchor)
         }
 
       }
@@ -977,6 +1084,42 @@ export function createRenderer(renderOptions) {
     patchProps(props, newProps, el)
     //更新孩子
     patchChildren(n1, n2, el)
+  }
+
+
+
+  /**
+   * 
+   * @param vnode 移动的节点
+   * @param container 移动的目标节点
+   * @param anchor 锚点
+   * @param type 
+   */
+  const move = (vnode, container, anchor?, moveType?): MoveFn => {
+
+    const { el, shapeFlag, type, children } = vnode
+    if (shapeFlag & ShapeFlags.COMPONENT) {
+      move(vnode.component.subTree, container, anchor, moveType)
+      return
+    }
+
+    if (type === Fragment) {
+      hostInsert(el, container, anchor)
+
+      for (let i = 0; i < children.length; i++) {
+        move(children[i], container, anchor, moveType)
+      }
+      hostInsert(vnode.anchor, container, anchor)
+      return
+    }
+
+    hostInsert(el, container, anchor)
+  }
+
+
+  const internals: RendererInternals = {
+    m: move,
+    o: renderOptions
   }
 
 

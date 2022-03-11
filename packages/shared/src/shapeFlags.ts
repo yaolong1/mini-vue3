@@ -9,7 +9,7 @@
  * c & a = 011 & 001 = 001>0 表示在c权限集合中存在a权限
  * 
  */
- export const enum ShapeFlags {
+export const enum ShapeFlags {
   ELEMENT = 1,//元素
   FUNCTIONAL_COMPONENT = 1 << 1, //函数式组件
   STATEFUL_COMPONENT = 1 << 2, //普通组件
@@ -18,5 +18,7 @@
   SLOTS_CHILDREN = 1 << 5, //组件插槽
   TELEPORT = 1 << 6, // teleport组件
   SUSPENSE = 1 << 7, // suspense组件
+  COMPONENT_SHOULD_KEEP_ALIVE = 1 << 8, //组件应该被keepalive
+  COMPONENT_KEPT_ALIVE = 1 << 9, //组件是一个keepalive组件
   COMPONENT = ShapeFlags.STATEFUL_COMPONENT | ShapeFlags.FUNCTIONAL_COMPONENT //组件
 }

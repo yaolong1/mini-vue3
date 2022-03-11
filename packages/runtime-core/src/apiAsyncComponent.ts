@@ -17,6 +17,9 @@ export interface AsyncComponentOptions<T = any> {
 export type AsyncComponentLoader<T = any> = () => Promise<T>
 
 
+export const isAsyncWrapper = (i): boolean =>
+  !!i.__asyncLoader
+
 export function defineAsyncComponent(source: AsyncComponentOptions | AsyncComponentLoader) {
 
   //source如果是函数就将source封装成对象
@@ -68,6 +71,7 @@ export function defineAsyncComponent(source: AsyncComponentOptions | AsyncCompon
   //返回一个包装组件
   return defineComponent({
     name: 'AsyncComponentWrapper',
+    __asyncLoader: load,
     setup() {
       //定义一个ref表示组件是否加载完成
       const loaded = ref(false)

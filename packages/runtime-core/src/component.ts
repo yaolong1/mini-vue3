@@ -1,10 +1,11 @@
+import { VNode } from './vnode';
 import { proxyRefs, shallowReadonly } from "@mini-vue3/reactivity"
 import { isFunction, isObject, ShapeFlags } from "@mini-vue3/shared"
 import { enableTracking, pauseTracking } from "packages/reactivity/src/effect"
 import { emit } from "./componentEmits"
 import { initProps } from "./componentProps"
 import { PublicInstanceProxyHandler } from "./componentPublicInstance"
-import { initSlots } from "./componentSlots"
+import { initSlots, InternalSlots } from "./componentSlots"
 
 //生命周期枚举
 export const enum LifecycleHooks {
@@ -24,10 +25,39 @@ export const enum LifecycleHooks {
   SERVER_PREFETCH = 'sp'
 }
 
+
+export type Data = Record<string, unknown>
+
+export interface ComponentInternalInstance {
+  next: VNode | null,//组件要更新的节点
+  vnode: any, // 实例对应的虚拟节点
+  type: any, // 组件对象
+  subTree: any, // 组件渲染完成后返回的内容  vnode
+  ctx: Data, // 组件的上下文
+  props: Data, // 组件属性 //组件中定义了的propsOptions叫做props
+  attrs: Data, // 除了props中的属性 //没定义的叫attrs
+  slots: InternalSlots, // 组件的插槽
+  data: Data, //data响应式对象
+  update: Function,//当前实例的effectRunner
+  setupState: Data, // 组件中setup的返回值 {方法，属性} 
+  propsOptions: Object, // 组件中的props选项 const component = {props:{title:{type:String,default:'xxx'}}}
+  proxy: any, // 实例的代理对象  
+  render: Function, // 组件的渲染函数
+  emit: Function, // 事件的触发
+  exposed: Object, // 暴露的方法
+  isMounted: boolean, // 是否被挂载完成
+  bm: Function[] | null,//beforeMounted
+  m: Function[] | null,//mounted
+  bu: Function[] | null,//beforeUpdate
+  u: Function[] | null,//updated
+  um: Function[] | null,//unmount
+  bum: Function[] | null,//beforeUnmount
+}
+
 export function createComponentInstance(vnode) {
   const type = vnode.type // 用户自己传入的属性
   const data = (type.data && isFunction(type.data) ? type.data() : type.data) || {}
-  const instance = {
+  const instance: ComponentInternalInstance = {
     vnode, // 实例对应的虚拟节点
     type, // 组件对象
     subTree: null, // 组件渲染完成后返回的内容  vnode
@@ -35,6 +65,7 @@ export function createComponentInstance(vnode) {
     props: {}, // 组件属性 //组件中定义了的propsOptions叫做props
     attrs: {}, // 除了props中的属性 //没定义的叫attrs
     slots: {}, // 组件的插槽
+    next: null,
     data, //data响应式对象
     update: () => { },//当前实例的effectRunner
     setupState: {}, // 组件中setup的返回值 {方法，属性} 

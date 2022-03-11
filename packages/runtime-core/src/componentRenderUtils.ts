@@ -5,6 +5,12 @@ export function shouldUpdateComponent(preVNode, nextVNode) {
   const { props: preProps } = preVNode
   const { props: nextProps } = nextVNode
 
+
+  if (preVNode.children !== nextVNode.children) {
+    return true
+  }
+
+
   //完全相等不更新
   if (preProps === nextProps) {
     return false

@@ -1,4 +1,11 @@
 import { hasOwn } from "@mini-vue3/shared"
+import { ComponentInternalInstance } from "./component";
+
+
+export interface ComponentRenderContext {
+  [key: string]: any
+  _: ComponentInternalInstance
+}
 
 
 const publicPropertiesMap = {
@@ -12,7 +19,7 @@ const publicPropertiesMap = {
 
 // render(){}上下文代理对象处理
 export const PublicInstanceProxyHandler = {
-  get({ _: instance }, key) {
+  get({ _: instance } : ComponentRenderContext, key) {
     const { setupState, props, data } = instance
     if (key.startsWith('$')) {
       return (publicPropertiesMap[key] && publicPropertiesMap[key](instance))
