@@ -89,6 +89,7 @@ export interface RendererOptions<HostNode = RendererNode, HostElement = Renderer
   createText(text: string): HostNode
   setText(node: HostNode, text: string): void
   setElementText(node: HostElement, text: string): void
+  createComment(text: string): HostNode
   parentNode(node: HostNode): HostNode | null
   nextSibling(node: HostNode): HostNode | null
   querySelector?(selector: string): HostElement | null
@@ -134,6 +135,7 @@ function baseCreateRenderer(
     parentNode: hostParentNode,
     nextSibling: hostNextSibling,
     firstChild: hostFirstChild,
+    createComment: hostCreateComment,
   } = renderOptions
 
 
@@ -338,6 +340,18 @@ function baseCreateRenderer(
     }
   }
 
+  const processCommentNode = (n1, n2, container, anchor) => {
+    if (n1 == null) {
+      hostInsert(
+        (n2.el = hostCreateComment((n2.children as string) || '')),
+        container,
+        anchor
+      )
+    } else {
+      //动态注释不支持
+      n2.el = n1.el
+    }
+  }
 
   // 卸载children
   /**
@@ -352,23 +366,34 @@ function baseCreateRenderer(
   }
 
   // 卸载元素
-  const unmount = (vnode) => {
+  const unmount = (vnode: VNode) => {
+
+    const {
+      el,
+      type,
+      shapeFlag,
+      keepAliveInstance,
+      component,
+      children,
+      transition } = vnode
+
+
     //如果是碎片就卸载它的孩子节点
-    if (vnode.type === Fragment) {
-      vnode.children.forEach((v) => unmount(v))
+    if (type === Fragment) {
+      children.forEach((v) => unmount(v))
     }
 
 
-    if (vnode.shapeFlag & ShapeFlags.COMPONENT) {
+    if (shapeFlag & ShapeFlags.COMPONENT) {
 
       //判断vnode是否应该keepAlive，如果是就不需要卸载,直接让其无效
-      if (vnode.shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE) {
-        (vnode.keepAliveInstance.ctx as KeepAliveContext).deactivate(vnode)
+      if (shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE) {
+        (keepAliveInstance.ctx as KeepAliveContext).deactivate(vnode)
         return
       }
 
       //拿到当前组件的卸载生命周期
-      const { um, bum, subTree } = vnode.component
+      const { um, bum, subTree } = component
       //卸载组件之前
       bum && invokeArrayFns(bum)
 
@@ -376,13 +401,17 @@ function baseCreateRenderer(
       unmount(subTree)
       //卸载组件之后
       um && invokeArrayFns(um)
-
       return
-
     }
-    hostRemove(vnode.el)
 
 
+    const performRemove = () => hostRemove(el)
+    if (transition) {
+      //当前节点有过渡动画,执行leave过渡
+      transition.leave(el, performRemove)
+    } else {
+      performRemove()
+    }
   }
 
   /**
@@ -403,16 +432,16 @@ function baseCreateRenderer(
    * @param vnode 挂载的虚拟DOM
    * @param container 
    */
-  const mountElement = (vnode, container, anchor) => {
+  const mountElement = (vnode: VNode, container: RendererElement, anchor: RendererNode) => {
     // vnode中的children永远只有两种情况：数组、字符串
     // 如果vnode的children是一个对象或vnode则要被h函数转化为数组
     // 所以children只有字符串和数组
 
     let el: RendererElement
 
-    const { type, props, shapeFlag, children } = vnode
-    el = vnode.el = hostCreateElement(type)
+    const { type, props, shapeFlag, children, transition } = vnode
 
+    el = vnode.el = hostCreateElement(type as string)
     // children是文本
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       hostSetElementText(el, children)
@@ -428,7 +457,19 @@ function baseCreateRenderer(
         hostPatchProp(el, key, null, props[key])
       }
     }
+
+
+    //当前虚拟节点是否有过渡====beforeEnter
+    if (transition) {
+      transition.beforeEnter(el)
+    }
+    
     hostInsert(el, container, anchor)
+
+    //当前虚拟节点是否有过渡====enter
+    if (transition) {
+      transition.enter(el)
+    }
   }
 
 
@@ -1191,6 +1232,7 @@ function baseCreateRenderer(
 
 
 
+
   /**
    * 
    * @param n1 老vnode
@@ -1214,6 +1256,9 @@ function baseCreateRenderer(
         console.log('patch Text-------')
         processText(n1, n2, container, anchor)
         break;
+      case Comment:
+        processCommentNode(n1, n2, container, anchor)
+        break
       case Fragment:
         console.log("patch Fragment-------")
         processFragment(n1, n2, container, anchor)

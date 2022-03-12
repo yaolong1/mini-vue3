@@ -1,7 +1,9 @@
+import { TransitionHooks } from '@mini-vue3/runtime-core';
 import { RendererNode, RendererElement } from './renderer';
 import { isTeleport, TeleportImpl } from './components/Teleport';
 import { isArray, isFunction, ShapeFlags, isObject, isString } from '@mini-vue3/shared';
 import { ComponentInternalInstance } from './component';
+import { KeepAliveContext } from './components/KeepAlive';
 
 
 export type VNodeTypes =
@@ -23,7 +25,7 @@ export interface VNode<
   ExtraProps = { [key: string]: any }
   > {
   __v_isVNode: boolean,
-  type: any,
+  type: VNodeTypes,
   props: (VNodeProps & ExtraProps) | null,
   children: any,
   key: string | number | symbol | null,
@@ -32,7 +34,9 @@ export interface VNode<
   target: HostElement | null // teleport target
   targetAnchor: HostNode | null // teleport target anchor
   shapeFlag: number,
-  anchor: HostNode
+  anchor: HostNode,
+  transition?: TransitionHooks,
+  keepAliveInstance?: KeepAliveContext//当前虚拟节点的keepAlive实例
 }
 
 /**
@@ -91,13 +95,14 @@ export function normalizeChildren(vnode, children) {
     type = ShapeFlags.ARRAY_CHILDREN
   } else if (isObject(children)) {
     //孩子为对象说明是插槽，因为h函数已经对children进行规范化，单个虚拟节点也会变成一个数组，所以当children为对象时即为插槽
+    //eg h(comp,{},{default: ()=> h(xxx)}) 这种情况就是返回的对象，在h函数中不会对其处理
+
     if (shapeFlag & ShapeFlags.ELEMENT) {
 
     } else {
       type = ShapeFlags.SLOTS_CHILDREN
     }
   } else if (isFunction(children)) {
-    debugger
     //孩子为函数说明是默认插槽
     type = ShapeFlags.SLOTS_CHILDREN
     children = { default: children }
@@ -120,7 +125,7 @@ export const Comment = Symbol()
 export const Fragment = Symbol()
 
 export const normalizeVNode = (child): VNode => {
-  if (child === null) {
+  if (child == null || typeof child === 'boolean') {
     //如果为空则为注释节点
     return createVNode(Comment)
   } else if (isArray(child)) {

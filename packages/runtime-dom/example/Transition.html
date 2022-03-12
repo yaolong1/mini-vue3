@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transition</title>
+</head>
+<style>
+  .box {
+    width: 100px;
+    height: 100px;
+    background-color: red;
+    color: white;
+    text-align: center;
+    line-height: 100px;
+    border-radius: 10px;
+  }
+
+  .enter-from {
+    transform: translateX(-200px);
+  }
+
+  .enter-to {
+    transform: translateX(0);
+  }
+
+  .enter-active {
+    transition: transform 1s ease-in-out;
+  }
+
+
+  .leave-from {
+    transform: translateX(0);
+  }
+
+  .leave-to {
+    transform: translateX(200px);
+  }
+
+  .leave-active {
+    transition: transform 1s ease-out;
+  }
+</style>
+
+<body>
+
+  <div id="app"></div>
+
+  <script src="../dist/runtime-dom.global.js"></script>
+
+  <!-- 采用Transition -->
+  <script>
+    const { createApp, Transition, h } = MiniVue3RuntimeDOM
+
+    const Child = () => h('div', { class: 'box' }, '过渡')
+    const App = {
+      setup(props) {
+        return () => {
+          return h(Transition, {}, Child)
+        }
+      }
+    }
+    createApp(App).mount('#app')
+  </script>
+
+
+
+  <!-- 直接用真实dom模拟 -->
+  <script>
+
+    //1、创建元素
+    const el = document.createElement('div')
+    el.innerHTML = '过度'
+
+
+    //2、挂载之前beforeEnter
+    el.classList.add('box')
+    el.classList.add('enter-from')
+    el.classList.add('enter-active') //激活transform过度
+
+
+    //3、挂载阶段
+    document.body.insertBefore(el,app)
+
+
+    //挂载成功之后下一帧
+    requestAnimationFrame(() => {
+
+      //enter阶段
+      el.classList.remove('enter-from')
+      el.classList.add('enter-to')
+      //过度完成后监听，删除类enter-active和enter-to
+      el.addEventListener("transitionend", () => {
+        el.classList.remove('enter-active')
+        el.classList.remove('enter-to')
+      })
+
+
+
+      //卸载阶段  模拟点击的时候卸载
+      el.addEventListener('click', () => {
+        //封装一个卸载el的函数
+        const preformRemove = () => el.parentNode.removeChild(el)
+
+        //1、卸载的初始阶段  添加卸载前的class
+        el.classList.add('leave-from')
+        el.classList.add('leave-active')
+        //强制reflow使过度状态生效
+        document.body.offsetHeight
+
+
+        //下一帧执行过度
+        requestAnimationFrame(() => {
+          //先删除leave-from,添加leave-to
+          el.classList.remove('leave-from')
+          el.classList.add('leave-to')
+
+          //监听过度完成
+          el.addEventListener('transitionend', () => {
+            //删除过度的样式
+            el.classList.remove('leave-active')
+            el.classList.remove('leave-to')
+
+            //最后删除el
+            preformRemove()
+          })
+
+        })
+      })
+    })
+
+
+  </script>
+</body>
+
+</html>

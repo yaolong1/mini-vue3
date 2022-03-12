@@ -8,12 +8,11 @@ import { nodeOps } from './nodeOps';
 import { patchProp } from './patchProp';
 
 
-
 const rendererOptions = extend(nodeOps, { patchProp }) //浏览器平台渲染包含的所有api
 
 // lazy创建渲染器-这使得核心渲染器逻辑 tree-shaking
 let renderer
-function ensureRenderer() {
+export function ensureRenderer() {
   return (
     renderer ||
     (renderer = createRenderer<Node, Element | ShadowRoot>(rendererOptions))
@@ -35,3 +34,7 @@ export const createApp = (rootComponent, rootProps = null) => {
 }
 
 export * from '@mini-vue3/runtime-core'
+
+
+export { Transition } from './component/Transition'
+

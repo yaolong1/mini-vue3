@@ -17,13 +17,16 @@ export type InternalSlots = {
 export function initSlots(instance, children) {
 
   if (instance.vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
-    //如果是一个函数说明是默认插槽
-    if (isFunction(children)) {
-      children = { default: children }
-    }
-    instance.slots = children
+    //如果是一个插槽对象（此处的插槽对象是在createVNode函数中进行格式化的）
+    // 现在是第二次规范化
+    // eg h(comp, {}, { default: () => h(xxx) }) 转换成 h(comp, {}, { default: [() => h(xxx)] })
+    // eg h(comp, {}, () => h(xxx)) 转换成 h(comp, {}, { default: [() => h(xxx)] })
+    normalizeObjectSlots(children, (instance.slots = {}), instance)
   } else {
     instance.slots = {}
+
+    //规范化
+    //eg h(Comp,{},[h(),h()]) ----> h(Comp,{},{default: ()=>[h(),h()]})
     if (children) {
       normalizeVNodeSlots(instance, children)
     }
@@ -56,7 +59,7 @@ export function updateSlots(instance: ComponentInternalInstance, children) {
 
 }
 
-function normalizeObjectSlots(rawSlots, slots, instance) {
+function normalizeObjectSlots(rawSlots, slots, instance?) {
 
 
   for (const key in rawSlots) {

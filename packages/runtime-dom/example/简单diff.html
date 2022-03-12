@@ -70,7 +70,7 @@
         const newNode = h('ul', {}, [h('button', { class: 'btn', onclick: this.change }, '改变'), h(Fragment, {}, children2)])
 
 
-        let vnode = this.flg.value ? oldNode : newNode
+        let vnode = this.flg ? oldNode : newNode
 
         return vnode
       }

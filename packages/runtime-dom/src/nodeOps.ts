@@ -28,6 +28,9 @@ export const nodeOps = {
   },
   //设置元素的文本 <div>元素的文本<div>
   setElementText: (el, text) => { el.textContent = text },
+  createComment: (text) => {
+    return document.createComment(text)
+  },
   createText: (text) => {
     return document.createTextNode(text)
   },
