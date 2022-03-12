@@ -7,6 +7,7 @@ export { defineComponent } from './apiDefineComponent'
 export * from './apiLifecycle'
 
 export { KeepAlive } from './components/KeepAlive'
+export { Teleport } from './components/Teleport'
 
 export { h } from './h'
 

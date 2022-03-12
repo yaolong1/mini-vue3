@@ -1,5 +1,5 @@
 import { KeepAliveContext } from './components/KeepAlive';
-import { Fragment, isSameVNodeType, normalizeVNode, Text } from './vnode';
+import { Fragment, isSameVNodeType, normalizeVNode, Text, VNode } from './vnode';
 import { effect, ReactiveEffect } from '@mini-vue3/reactivity';
 import { invokeArrayFns, ShapeFlags, isFunction } from '@mini-vue3/shared';
 // 主要是一些与平台无关的代码，依赖响应式模块 (平台相关的代码一般只是传入runtime-core Api中)
@@ -10,40 +10,89 @@ import { queueJob } from './scheduler';
 import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUtils';
 import { resolveProps } from './componentProps';
 import { updateSlots } from './componentSlots';
+import { TeleportImpl } from './components/Teleport';
 
+export interface RendererNode {
+  [key: string]: any
+}
+
+export interface RendererElement extends RendererNode { }
 
 type MoveFn = (
   vnode: any,
-  container: any,
-  anchor?: any | null,
+  container: RendererElement,
+  anchor?: RendererNode | null,
   type?: any
 ) => void
 
+type PatchFn = (
+  n1: VNode | null, // null means this is a mount
+  n2: VNode,
+  container: RendererElement,
+  anchor?: RendererNode | null,
+) => void
+
+type MountChildrenFn = (
+  container: RendererElement,
+  children: VNode[],
+  anchor: RendererNode | null,
+  start?: number
+) => void
+
+type PatchChildrenFn = (
+  n1: VNode | null,
+  n2: VNode,
+  container: RendererElement,
+  anchor: RendererNode | null,
+) => void
+
+
+type UnmountFn = (
+  vnode: VNode,
+) => void
+
+
+type UnmountChildrenFn = (
+  children: VNode[],
+  start?: number
+) => void
+
+export type MountComponentFn = (
+  initialVNode: VNode,
+  container: RendererElement,
+  anchor: RendererNode | null,
+) => void
+
 export interface RendererInternals {
-  m: MoveFn,
+  p: PatchFn
+  um: UnmountFn
+  m: MoveFn
+  mt: MountComponentFn
+  mc: MountChildrenFn
+  pc: PatchChildrenFn
   o: RendererOptions
 }
 
 
-export interface RendererOptions {
+export interface RendererOptions<HostNode = RendererNode, HostElement = RendererElement> {
   patchProp(
-    el: any,
+    el: HostElement,
     key: string,
     prevValue: any,
     nextValue: any,
   ): void
-  insert(el: any, parent: any, anchor?: any | null): void
-  remove(el: any): void
+  insert(el: HostNode, parent: HostElement, anchor?: HostNode | null): void
+  remove(el: HostNode): void
   createElement(
     type: string,
-  ): any
-  createText(text: string): any
-  setText(node: any, text: string): void
-  setElementText(node: any, text: string): void
-  parentNode(node: any): any | null
-  nextSibling(node: any): any | null
-  querySelector?(selector: string): any | null
-  firstChild?(el: string): any | null
+  ): HostElement
+  createText(text: string): HostNode
+  setText(node: HostNode, text: string): void
+  setElementText(node: HostElement, text: string): void
+  parentNode(node: HostNode): HostNode | null
+  nextSibling(node: HostNode): HostNode | null
+  querySelector?(selector: string): HostElement | null
+  firstChild?(el: HostElement): HostNode | null
 }
 
 
@@ -51,14 +100,28 @@ export interface RendererOptions {
 export const isKeepAlive = (vnode): boolean => !!vnode.type.__isKeepAlive
 
 
-
 /**
  * 创建一个渲染器
  * @param renderOptions // 第三方平台的api选项 
  * @returns {render,createApp()}
  */
-export function createRenderer(renderOptions: RendererOptions) {
+export function createRenderer<
+  HostNode = RendererNode,
+  HostElement = RendererElement
+>(renderOptions: RendererOptions<HostNode, HostElement>) {
+  return baseCreateRenderer<HostNode, HostElement>(renderOptions)
+}
 
+//base
+function baseCreateRenderer<
+  HostNode = RendererNode,
+  HostElement = RendererElement
+>(renderOptions: RendererOptions<HostNode, HostElement>)
+
+// implementation
+function baseCreateRenderer(
+  renderOptions: RendererOptions,
+): any {
   //第三方平台的APi
   const {
     insert: hostInsert,
@@ -266,7 +329,7 @@ export function createRenderer(renderOptions: RendererOptions) {
       //不知道做什么，推测是用于move()操作 #
       hostInsert(fragmentStartAnchor, container, anchor)
       hostInsert(fragmentEndAnchor, container, anchor)
-
+      debugger
       //不存在旧节点，直接挂载
       mountChildren(container, n2.children, fragmentEndAnchor)
     } else {
@@ -345,8 +408,10 @@ export function createRenderer(renderOptions: RendererOptions) {
     // 如果vnode的children是一个对象或vnode则要被h函数转化为数组
     // 所以children只有字符串和数组
 
+    let el: RendererElement
+
     const { type, props, shapeFlag, children } = vnode
-    let el = vnode.el = hostCreateElement(type)
+    el = vnode.el = hostCreateElement(type)
 
     // children是文本
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
@@ -660,7 +725,7 @@ export function createRenderer(renderOptions: RendererOptions) {
           //如果当前索引和 newIndexToOldMapIndex的索引的最大递增子序列不等 说明当前的元素需要插入
           // i = [3 2 1 0] queue=[2 1]  索引是倒叙的  相同的就不需要移动 不同才移动 
           if (i !== queue[j]) {
-            hostInsert(lastChild.el, container, anchor)
+            move(lastChild, container, anchor)
           } else {
             j-- // 这里做了个优化，表示不需要移动
           }
@@ -1103,6 +1168,13 @@ export function createRenderer(renderOptions: RendererOptions) {
       return
     }
 
+
+    if (shapeFlag & ShapeFlags.TELEPORT) {
+      //TODO
+      // ;(type as typeof TeleportImpl).move(vnode, container, anchor, internals)
+      return
+    }
+
     if (type === Fragment) {
       hostInsert(el, container, anchor)
 
@@ -1117,10 +1189,6 @@ export function createRenderer(renderOptions: RendererOptions) {
   }
 
 
-  const internals: RendererInternals = {
-    m: move,
-    o: renderOptions
-  }
 
 
   /**
@@ -1157,17 +1225,28 @@ export function createRenderer(renderOptions: RendererOptions) {
         } else if (shapeFlag & ShapeFlags.ELEMENT) {
           console.log('patch元素-------')
           processElement(n1, n2, container, anchor)
+        } else if (shapeFlag & ShapeFlags.TELEPORT) {
+          //传送门组件
+          debugger
+          ; (type as typeof TeleportImpl).process(n1, n2, container, anchor, internals)
         }
     }
-
-
-
   }
 
 
 
   const render = (vnode, container) => { //将虚拟节点转化为真实节点渲染到容器中
     patch(null, vnode, container) // patch(prevNode,nextNode,真实节点)
+  }
+
+  const internals: RendererInternals = {
+    m: move,
+    um: unmount,
+    mt: mountComponent,
+    mc: mountChildren,
+    pc: patchChildren,
+    p: patch,
+    o: renderOptions
   }
 
   return {

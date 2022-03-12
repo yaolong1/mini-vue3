@@ -9,17 +9,25 @@ import { patchProp } from './patchProp';
 
 
 
-const renderOptions = extend(nodeOps, { patchProp }) //浏览器平台渲染包含的所有api
+const rendererOptions = extend(nodeOps, { patchProp }) //浏览器平台渲染包含的所有api
 
+// lazy创建渲染器-这使得核心渲染器逻辑 tree-shaking
+let renderer
+function ensureRenderer() {
+  return (
+    renderer ||
+    (renderer = createRenderer<Node, Element | ShadowRoot>(rendererOptions))
+  )
+}
 
 
 export const createApp = (rootComponent, rootProps = null) => {
   //创建一个渲染器 返回 createApp
-  const { createApp } = createRenderer(renderOptions) //createRenderer 是runtime-core中的方法
+  const { createApp } = ensureRenderer() //createRenderer 是runtime-core中的方法
   const app = createApp(rootComponent, rootProps)
   let { mount } = app // 获取core中app的mount
   app.mount = function (container) { //重新mount
-    container = renderOptions.querySelector(container)
+    container = rendererOptions.querySelector(container)
     container.innerHTML = '' //清空根元素的children
     mount(container)
   }

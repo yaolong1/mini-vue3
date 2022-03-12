@@ -1,17 +1,38 @@
+import { RendererNode, RendererElement } from './renderer';
+import { isTeleport, TeleportImpl } from './components/Teleport';
 import { isArray, isFunction, ShapeFlags, isObject, isString } from '@mini-vue3/shared';
 import { ComponentInternalInstance } from './component';
 
 
+export type VNodeTypes =
+  | string
+  | VNode
+  | Object
+  | typeof Text
+  | typeof Comment
+  | typeof Fragment
+  | typeof TeleportImpl
 
-export interface VNode {
+export type VNodeProps = {
+  key?: string | number | symbol
+}
+
+export interface VNode<
+  HostNode = RendererNode,
+  HostElement = RendererElement,
+  ExtraProps = { [key: string]: any }
+  > {
   __v_isVNode: boolean,
   type: any,
-  props: any,
+  props: (VNodeProps & ExtraProps) | null,
   children: any,
   key: string | number | symbol | null,
   component: ComponentInternalInstance | null,
-  el: any,
-  shapeFlag: number
+  el: HostElement,
+  target: HostElement | null // teleport target
+  targetAnchor: HostNode | null // teleport target anchor
+  shapeFlag: number,
+  anchor: HostNode
 }
 
 /**
@@ -20,17 +41,20 @@ export interface VNode {
  * @param props 
  * @param children  
  */
-export function createVNode(type, props = null, children = null) {
+export function createVNode(type, props = null, children = null): VNode {
 
   // 描述虚拟节点的类型
   const shapeFlag =
-    isObject(type)
-      ? ShapeFlags.STATEFUL_COMPONENT
-      : isString(type)
-        ? ShapeFlags.ELEMENT
+
+    isString(type)
+      ? ShapeFlags.ELEMENT
+      : isTeleport(type)
+        ? ShapeFlags.TELEPORT
         : isFunction(type)
           ? ShapeFlags.FUNCTIONAL_COMPONENT
-          : 0
+          : isObject(type)
+            ? ShapeFlags.STATEFUL_COMPONENT
+            : 0
   const vnode = { //跨平台的
     __v_isVNode: true,
     type, //组件、或者元素 
@@ -39,7 +63,10 @@ export function createVNode(type, props = null, children = null) {
     key: props && props.key,
     component: null, //如果当前的当前的vnode是一个组件，应当保存当前组件的实例
     el: null, //虚拟节点对应的虚拟节点
-    shapeFlag // 可以同时描述虚拟节点的类型和它孩子节点的类型 (使用 | & )
+    shapeFlag, // 可以同时描述虚拟节点的类型和它孩子节点的类型 (使用 | & )
+    anchor: null,
+    target: null,
+    targetAnchor: null
   }
   // 合并当前节点的孩子节点是什么类型
   // 方便在渲染的时候使用 & 运算来检查是否存在什么样的孩子节点，什么样的节点类型
@@ -92,7 +119,7 @@ export const Comment = Symbol()
 //碎片
 export const Fragment = Symbol()
 
-export const normalizeVNode = (child) => {
+export const normalizeVNode = (child): VNode => {
   if (child === null) {
     //如果为空则为注释节点
     return createVNode(Comment)
