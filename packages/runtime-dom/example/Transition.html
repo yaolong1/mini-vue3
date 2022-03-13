@@ -9,6 +9,7 @@
 </head>
 <style>
   .box {
+    display: block;
     width: 100px;
     height: 100px;
     background-color: red;
@@ -49,16 +50,24 @@
   <div id="app"></div>
 
   <script src="../dist/runtime-dom.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
 
   <!-- 采用Transition -->
   <script>
-    const { createApp, Transition, h } = MiniVue3RuntimeDOM
+    const { createApp, Transition, h, ref } = MiniVue3RuntimeDOM
 
-    const Child = () => h('div', { class: 'box' }, '过渡')
+    const Child2 = () => h('div', { class: 'box' }, '过渡2')
+    const Child1 = () => h('span', { class: 'box' }, '过渡1')
     const App = {
       setup(props) {
+
+        const flg = ref(false)
+        setTimeout(() => {
+          flg.value = true
+        }, 2000)
+
         return () => {
-          return h(Transition, {}, Child)
+          return flg.value ? h(Transition, {}, Child2) : h(Transition, {}, Child1)
         }
       }
     }
@@ -82,7 +91,7 @@
 
 
     //3、挂载阶段
-    document.body.insertBefore(el,app)
+    document.body.insertBefore(el, app)
 
 
     //挂载成功之后下一帧

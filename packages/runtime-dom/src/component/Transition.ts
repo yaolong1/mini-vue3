@@ -87,9 +87,6 @@ function nextFrame(cb: () => void) {
 export const Transition = {
   name: 'transition',
   setup(props: TransitionProps, { slots }) {
-
-
-
     return () => {
 
 
