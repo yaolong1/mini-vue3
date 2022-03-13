@@ -67,7 +67,7 @@
         }, 2000)
 
         return () => {
-          return flg.value ? h(Transition, {}, Child2) : h(Transition, {}, Child1)
+          return h(Transition, {}, Child1)
         }
       }
     }
