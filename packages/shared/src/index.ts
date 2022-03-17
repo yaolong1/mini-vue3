@@ -25,6 +25,7 @@ export const isOn = (key: string) => onRE.test(key)
 
 
 
+
 const cacheStringFunction = <T extends (str: string) => string>(fn: T): T => {
   const cache: Record<string, string> = Object.create(null)
   return ((str: string) => {

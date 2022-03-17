@@ -1,0 +1,22 @@
+{
+  "name": "@mini-vue3/compiler-core",
+  "version": "1.0.0",
+  "description": "编译核心",
+  "main": "index.js",
+  "module": "dist/compiler-core.esm-bundler.js",
+  "unpkg": "dist/compiler-core.global.js",
+  "buildOptions": {
+    "name": "MiniVue3CompilerCore",
+    "formats": [
+      "cjs",
+      "esm-bundler",
+      "global"
+    ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "yaolong",
+  "license": "ISC"
+}
