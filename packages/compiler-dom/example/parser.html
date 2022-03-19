@@ -10,12 +10,12 @@
 
 <body>
 
-  <script src="../dist/compiler-core.global.js"></script>
+  <script src="../dist/compiler-dom.global.js"></script>
   <script src="http://unpkg.com/vue"></script>
   <script>
-    const { parse } = MiniVue3CompilerCore
+    const { parse } = MiniVue3CompilerDom
 
-    const template = `<div><p>Vue哈哈</p><p>template的天啊</p></div>`
+    const template = `<div id="1" name="haha" test=1' a=b  ><p></p><p></p></div>`
     const templateAST = parse(template)
   </script>
 </body>

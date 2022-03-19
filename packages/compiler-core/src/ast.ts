@@ -4,6 +4,8 @@ export enum NodeTypes {
   TEXT, //文本节点
   COMMENT,//注释节点
   INTERPOLATION,//插值节点 {{ccc}}
+  ATTRIBUTE, //元素节点的属性节点
+  DIRECTIVE //指令
 }
 
 //Vue中的HTML元素类型
@@ -13,6 +15,8 @@ export const enum ElementTypes {
   SLOT, // 插槽元素
   TEMPLATE //template元素
 }
+
+
 
 export interface Node {
   type: NodeTypes
@@ -24,7 +28,7 @@ export interface BaseElementNode extends Node {
   tag: string,
   tagType: ElementTypes,
   isSelfClosing: boolean, //是否是自闭标签
-  props: [],
+  props: (AttributeNode | DirectiveNode)[],
   children: TemplateChildNode[]
 }
 
@@ -59,6 +63,19 @@ export interface RootNode extends Node {
   type: NodeTypes.ROOT,
   children: TemplateChildNode[]
 }
+
+export interface AttributeNode extends Node {
+  type: NodeTypes.ATTRIBUTE,
+  name: string,
+  value: TextNode | undefined
+}
+
+export interface DirectiveNode extends Node {
+  type: NodeTypes.DIRECTIVE,
+  name: string,
+  value: undefined
+}
+
 
 //元素节点
 export type ElementNode =

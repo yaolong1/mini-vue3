@@ -42,6 +42,7 @@ export const TeleportImpl = {
       // insert anchors in the main view
       const placeholder = (n2.el = createText('teleport start'))
       const mainAnchor = (n2.anchor = createText('teleport end'))
+      
       insert(placeholder, container, anchor)
       insert(mainAnchor, container, anchor)
 
