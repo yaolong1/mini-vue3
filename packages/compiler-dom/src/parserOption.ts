@@ -1,7 +1,7 @@
 import { ElementNode, TextModes } from "@mini-vue3/compiler-core";
 import { ParserOptions } from "@mini-vue3/compiler-core";
 import { makeMap } from "@mini-vue3/shared";
-import { decodeHtml } from "./decodeHtml";
+import { decodeHtml } from "./decodeHtml_";
 
 
 const isRawTextContainer = /*#__PURE__*/ makeMap(

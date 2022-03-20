@@ -42,6 +42,7 @@ export interface ParserContext {
 }
 
 const defaultParserOptions: ParserOptions = {
+  delimiters: ['{{', '}}'], //插值语法
   getTextMode: () => TextModes.DATA, //设置初始模式为DATA模式。在该模式下支持解析标签、支持解析html实体
 }
 
@@ -178,6 +179,7 @@ function parseElement(
 
 
   ancestors.push(element)
+  //根据不同的Element拿到解析模式
   const mode = context.options.getTextMode(element, context)
   element.children = parseChildren(context, mode, ancestors)
   ancestors.pop()
@@ -216,12 +218,36 @@ function parseInterpolation(
   return
 }
 
-//解析插值文本节点
+//文本节点
 function parseText(
   context: ParserContext,
   mode: TextModes
 ): TextNode {
-  return
+
+  //用于存储文本节点下一个节点的开始字符。其中CDATA模式的开始字符是]]> ,插值节点的开始字符是{{,普通标签开始字符是<
+  const endTokens = mode === TextModes.CDATA ? [']]>'] : ['<', context.options.delimiters[0]]
+
+  //文本内容的最后一个索引，默认是整个source的最后一个。此索引用于截取文本，表示截取最后一个字符的索引 [0,endIndex)
+  let endIndex = context.source.length
+  for (let i = 0; i < endTokens.length; i++) {
+    //找到第一个出现endTokens[i]字符的索引
+    const index = context.source.indexOf(endTokens[i], 1)
+    if (index !== -1 && index < endIndex) {
+      //如果存在，更新endIndex
+      endIndex = index
+    }
+  }
+
+  //处理好endIndex后解析文本内容
+  const content = parseTextData(
+    context,
+    endIndex,
+    mode
+  )
+  return {
+    type: NodeTypes.TEXT,
+    content
+  }
 }
 
 //解析标签
@@ -415,7 +441,7 @@ function parseAttributeValue(context: ParserContext): AttributeValue {
 
     //TODO 此处还要判断一个没有引号的情况下，属性值的合法性
     const unexpectedChars = /["'<=`]/g
-    if (unexpectedChars.test(context.source)) {
+    if (unexpectedChars.test(match[0])) {
       console.error('当前的值不合法')
     }
 

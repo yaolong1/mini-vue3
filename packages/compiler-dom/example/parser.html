@@ -9,13 +9,17 @@
 </head>
 
 <body>
-
+  <div>
+    &#x1F471;
+    &#x80;
+    &#x00;
+  </div>
   <script src="../dist/compiler-dom.global.js"></script>
   <script src="http://unpkg.com/vue"></script>
   <script>
     const { parse } = MiniVue3CompilerDom
 
-    const template = `<div id="1" name="haha" test=1' a=b  ><p></p><p></p></div>`
+    const template = `<div id="1" name="haha" test='1&lt' a=b  >哈哈&ltcc;&#x1F471;&#x00;&#x80;<p></p><p></p></div>`
     const templateAST = parse(template)
   </script>
 </body>
