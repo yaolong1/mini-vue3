@@ -36,7 +36,7 @@ export function transform(node: TemplateAstNode) {
 function createTransformContext(): TransformContext {
   const context = {
     replaceNode,
-    removeNode(node) {
+    removeNode(node:) {
       if (context.parent) {
         context.parent.children.splice(context.childIndex, 1)
         context.currentNode = null

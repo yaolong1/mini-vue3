@@ -7,4 +7,5 @@
 export * from './parse'
 export * from './ast'
 export * from './options'
+export * from './compile'
 

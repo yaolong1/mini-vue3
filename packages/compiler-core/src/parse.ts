@@ -102,10 +102,10 @@ function parseChildren(
 ): TemplateChildNode[] {
   let nodes: TemplateChildNode[] = []
 
-  const s = context.source
 
 
   while (!isEnd(context, ancestors)) {
+    const s = context.source
     //存储当前解析后的节点
     let node: TemplateChildNode | TemplateChildNode[]
     //DATA模式和RCDATA模式才支持插值内容的解析
@@ -200,13 +200,33 @@ function parseElement(
 function parseComment(
   context: ParserContext,
 ): CommentNode {
-  return
+
+  //消费注释的开始部分
+  advanceBy(context, '<!--'.length)
+  //结束部分所在的索引
+  let closeIndex = context.source.indexOf('-->')
+
+  if (closeIndex < 0) {
+    console.error('注释无结束符')
+  }
+  //截取注释内容部分
+  const content = context.source.slice(0, closeIndex)
+
+  //消费内容
+  advanceBy(context, content.length)
+  //消费注释结束符
+  advanceBy(context, '-->'.length)
+  return {
+    type: NodeTypes.COMMENT,
+    content
+  }
 }
 
 //及解析CDATA
 function parseCDATA(
   context: ParserContext,
 ): TemplateChildNode[] {
+  //CDATA和普通文本一样不解析实体不支持解析标签
   return
 }
 
@@ -215,7 +235,31 @@ function parseInterpolation(
   context: ParserContext,
   mode: TextModes
 ): InterpolationNode {
-  return
+  const [open, close] = context.options.delimiters
+
+  // 消费开始插值定界符  dom的开始定界符是{{
+  advanceBy(context, open.length);
+
+  // 找到结束定界符的位置索引
+  let closeIndex = context.source.indexOf(close)
+
+  if (closeIndex < 0) {
+    console.log('没有结束定界符', close)
+  }
+  debugger
+  //截取定界符之间的内容最为插值表达式
+  const preTrimContent = parseTextData(context, closeIndex, mode)
+  const content = preTrimContent.trim()
+  //消费结束定界符
+  advanceBy(context, close.length)
+
+  return {
+    type: NodeTypes.INTERPOLATION,
+    content: {
+      type: NodeTypes.SIMPLE_EXPRESSION,
+      content
+    }
+  }
 }
 
 //文本节点
@@ -237,6 +281,7 @@ function parseText(
       endIndex = index
     }
   }
+
 
   //处理好endIndex后解析文本内容
   const content = parseTextData(
@@ -441,7 +486,7 @@ function parseAttributeValue(context: ParserContext): AttributeValue {
 
     //TODO 此处还要判断一个没有引号的情况下，属性值的合法性
     const unexpectedChars = /["'<=`]/g
-    if (unexpectedChars.test(match[0])) {
+    if (unexpectedChars.test(match[1])) {
       console.error('当前的值不合法')
     }
 

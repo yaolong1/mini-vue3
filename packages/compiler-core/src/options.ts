@@ -1,4 +1,5 @@
 import { TextModes } from "./parse";
+import { NodeTransform } from "./transform";
 
 export interface ParserOptions {
   getTextMode?: (node, parent) => TextModes,
@@ -9,3 +10,14 @@ export interface ParserOptions {
   decodeEntities?: (rawText: string, asAttr: boolean) => string
 }
 
+
+export interface TransformOptions {
+  nodeTransforms?: NodeTransform[]
+}
+
+
+export interface CodegenOptions {
+
+}
+
+export type CompilerOptions = ParserOptions & TransformOptions & CodegenOptions

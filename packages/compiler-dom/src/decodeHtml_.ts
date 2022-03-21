@@ -141,7 +141,7 @@ export function decodeHtml(
           //如果码点是noncharacter范围内的，什么都不做，交给平台处理
           // noop
         } else if (
-          //控制字符集非ASCII空白字符  码点范围在[0x01,0x1f] 和 [0x7f,0x9f] 
+          //控制字符集非ASCII空白字符  码点范围在[0x01,0x1f] 和 [0x7f,0x9f] 为非法解析字符码点，需要替换
           (cp >= 0x01 && cp <= 0x08) ||
           cp === 0x0b ||
           (cp >= 0x0d && cp <= 0x1f) ||

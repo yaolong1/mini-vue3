@@ -5,7 +5,8 @@ export enum NodeTypes {
   COMMENT,//注释节点
   INTERPOLATION,//插值节点 {{ccc}}
   ATTRIBUTE, //元素节点的属性节点
-  DIRECTIVE //指令
+  DIRECTIVE, //指令
+  SIMPLE_EXPRESSION //简单表达式节点类型
 }
 
 //Vue中的HTML元素类型
@@ -17,6 +18,9 @@ export const enum ElementTypes {
 }
 
 
+export type ParentNode = RootNode | ElementNode
+
+export type ExpressionNode = SimpleExpressionNode
 
 export interface Node {
   type: NodeTypes
@@ -99,7 +103,7 @@ export interface CommentNode extends Node {
 //插值节点
 export interface InterpolationNode extends Node {
   type: NodeTypes.INTERPOLATION
-  content: any
+  content: ExpressionNode
 }
 
 export type TemplateChildNode =
@@ -108,6 +112,12 @@ export type TemplateChildNode =
   | CommentNode
   | InterpolationNode
 
+
+
+export interface SimpleExpressionNode extends Node {
+  type: NodeTypes.SIMPLE_EXPRESSION
+  content: string
+}
 
 
 //创建根节点

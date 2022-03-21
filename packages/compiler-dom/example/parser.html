@@ -19,7 +19,7 @@
   <script>
     const { parse } = MiniVue3CompilerDom
 
-    const template = `<div id="1" name="haha" test='1&lt' a=b  >哈哈&ltcc;&#x1F471;&#x00;&#x80;<p></p><p></p></div>`
+    const template = `<div id="1" name="haha" test='1&lt=' a=b  >哈哈&ltcc;&#x1F471; &#x00; &#x80; {{test}} <!--注释哈哈哈--> <p></p><p></p></div>`
     const templateAST = parse(template)
   </script>
 </body>
