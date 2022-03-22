@@ -2,19 +2,20 @@
 
 #### 声明
 
-源码中的注释都是凭自己对 vue 的理解所写的，如有注释错误或者语义不清晰，希望大家提交中文注释的pr。我们一同进步
+源码中的注释都是凭自己对 vue 的理解所写的，如有注释错误或者语义不清晰，希望大家提交中文注释的pr。
 
 #### 介绍
 
-迷你版 vue3 (带详细注释)
+迷你版 vue3 (带详细注释),采用和vue3源码相同的monorepo前端项目管理，源码结构、函数名和vue3基本一致
 
 - 已实现：
   - ① reactivity: 响应式 APi computed ref toRefs toRef reactive effect readonly shallowReadonly shallowReactive
   - ② runtime-dom: createApp
   - ③ runtime-core: createRender (包含 diff 算法)
+  - ④ compiler-dom: parse compile
+  - ⑤ template-explorer: 模板浏览器，可用于查看html模板生成的render函数，（由于compiler-core没完全实现，现在只是一个界面）
 - 未实现:
-  - ① compiler-core
-  - ② compiler-dom
+  - ① compiler-core baseParse(已实现) baseCompile（未实现）
 
 #### 使用说明
 
