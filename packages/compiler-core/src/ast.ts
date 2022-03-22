@@ -6,7 +6,13 @@ export enum NodeTypes {
   INTERPOLATION,//插值节点 {{ccc}}
   ATTRIBUTE, //元素节点的属性节点
   DIRECTIVE, //指令
-  SIMPLE_EXPRESSION //简单表达式节点类型
+  SIMPLE_EXPRESSION, //简单表达式节点类型
+
+
+  //codegen
+  JS_ARRAY_EXPRESSION, 
+  JS_FUNCTION_EXPRESSION,
+  JS_CALL_EXPRESSION,
 }
 
 //Vue中的HTML元素类型
@@ -26,13 +32,12 @@ export interface Node {
   type: NodeTypes
 }
 
-
 export interface BaseElementNode extends Node {
   type: NodeTypes.ELEMENT,
   tag: string,
   tagType: ElementTypes,
   isSelfClosing: boolean, //是否是自闭标签
-  props: (AttributeNode | DirectiveNode)[],
+  props: Array<AttributeNode | DirectiveNode>,
   children: TemplateChildNode[]
 }
 
@@ -74,10 +79,30 @@ export interface AttributeNode extends Node {
   value: TextNode | undefined
 }
 
+/**
+ * 
+ * eg: <div v-bind:class="a">
+ * 
+ *{
+ * name: 'if',
+ * exp:{
+ *  type: SIMPLE_EXPRESSION,
+ *  content: 'a',
+ *  isStatic: false
+ * },
+ * arg: {
+ *  type: SIMPLE_EXPRESSION,
+ *  content: 'class',
+ *  isStatic: true
+ * } 
+ *}  
+ */
 export interface DirectiveNode extends Node {
   type: NodeTypes.DIRECTIVE,
   name: string,
-  value: undefined
+  exp: ExpressionNode | undefined, 
+  arg: ExpressionNode | undefined
+
 }
 
 
@@ -116,9 +141,65 @@ export type TemplateChildNode =
 
 export interface SimpleExpressionNode extends Node {
   type: NodeTypes.SIMPLE_EXPRESSION
-  content: string
+  content: string,
+  isStatic: boolean
 }
 
+
+
+
+
+// //创建string字面量节点
+// export function createStringLiteral(value) {
+//   return {
+//     type: NodeTypes.STRING_LITERAL,
+//     value
+//   }
+// }
+
+// //创建Identifier标识符节点
+// export function createIdentifier(name) {
+//   return {
+//     type: NodeTypes.IDENTIFIER,
+//     name
+//   }
+// }
+
+
+//创建ArrayExpression数组表达式节点
+export function createArrayExpression(elements) {
+  return {
+    type: NodeTypes.JS_ARRAY_EXPRESSION,
+    elements
+  }
+}
+
+//创建CallExpression函数调用表达式节点
+export function createCallExpression(callee, _arguments) {
+  return {
+    type: NodeTypes.JS_CALL_EXPRESSION,
+    callee: callee,
+    arguments: _arguments
+  }
+}
+
+//创建ReturnStatement表达式节点
+// export function createReturnStatement(_return) {
+//   return {
+//     type: NodeTypes.RETURN_STATEMENT,
+//     return: _return
+//   }
+// }
+
+//创建FunctionDecl表达式节点
+// export function createFunctionDecl(fnName, returnStatement) {
+//   return {
+//     type: NodeTypes.FUNCTION_DECL,
+//     id: createIdentifier(fnName),
+//     params: [],
+//     body: [returnStatement]
+//   }
+// }
 
 //创建根节点
 export function createRoot(children: TemplateChildNode[]): RootNode {

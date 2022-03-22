@@ -66,15 +66,14 @@ function traverseNode(node: RootNode | TemplateChildNode, context: TransformCont
     }
   }
 
-
-
   switch (node.type) {
     case NodeTypes.ELEMENT:
     case NodeTypes.ROOT:
       traverseChildren(node, context)
       break
+    default:
+      break;
   }
-
 
 
   //在此处执行退出阶段的函数就能实现保证孩子节点已经转换完成

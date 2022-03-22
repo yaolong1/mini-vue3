@@ -13,7 +13,7 @@
   <!-- <script src="../dist/runtime-dom.global.js"></script> -->
   <script src="http://unpkg.com/vue"></script>
   <script>
-    const { createApp, h, reactive, toRefs, ref } = MiniVue3RuntimeDOM
+    const { createApp, h, reactive, toRefs, ref } = Vue
 
     function useCounter() {
       const data = reactive({ counter: 1 })
@@ -102,7 +102,7 @@
         const newNode = h('h1', {}, [h('div', { onClick: this.test }, '1'), "children2"])
 
 
-        let vnode = this.flag.value ? oldNode : newNode
+        let vnode = this.flag ? oldNode : newNode
 
         return vnode
       }

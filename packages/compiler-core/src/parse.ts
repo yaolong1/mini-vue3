@@ -75,7 +75,6 @@ function createParseContext(
 }
 
 
-
 //解析器函数，接收一个模板
 export function baseParse(
   content: string,
@@ -88,9 +87,9 @@ export function baseParse(
 }
 
 
-//解析孩子
+
 /**
- * 
+ * 解析孩子
  * @param context 
  * @param mode //模式
  * @param anchors  //父代节点生成的节点栈
@@ -100,8 +99,8 @@ function parseChildren(
   mode: TextModes,
   ancestors: ElementNode[]
 ): TemplateChildNode[] {
-  let nodes: TemplateChildNode[] = []
 
+  let nodes: TemplateChildNode[] = []
 
 
   while (!isEnd(context, ancestors)) {
@@ -257,7 +256,8 @@ function parseInterpolation(
     type: NodeTypes.INTERPOLATION,
     content: {
       type: NodeTypes.SIMPLE_EXPRESSION,
-      content
+      content,
+      isStatic: false
     }
   }
 }
