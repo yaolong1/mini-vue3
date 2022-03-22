@@ -9,6 +9,8 @@ export interface CodegenResult {
 
 export function generate(ast: RootNode, options: CodegenOptions): CodegenResult {
 
-
-  return
+  return {
+    code: 'h()',
+    ast
+  }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "@mini-vue/template-explorer",
+  "private": true,
+  "buildOptions": {
+    "formats": [
+      "global"
+    ]
+  },
+  "dependencies": {
+    "monaco-editor": "^0.20.0",
+    "source-map": "^0.6.1"
+  }
+}
