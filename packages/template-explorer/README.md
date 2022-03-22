@@ -1,10 +1,6 @@
 ## Template Explorer
 
-Live explorer for template compilation output.
+### 运行
 
-To run:
-
-- `npm run dev-compiler` in repo root
-- When the compilation is done, in another terminal run `npm run open`
-
-Note: `index.html` uses CDN for dependencies and is continuously deployed at [https://vue-next-template-explorer.netlify.com/](https://vue-next-template-explorer.netlify.com/). For local development, use the scripts above.
+- `npm run serve` 
+- 浏览器输入地址`http://localhost:服务运行的端口/packages/template-explorer/local.html`可访问
