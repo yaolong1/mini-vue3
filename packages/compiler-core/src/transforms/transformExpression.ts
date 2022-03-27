@@ -13,9 +13,8 @@ export const transformExpression: NodeTransform = (node, context) => {
         if (exp.type === NodeTypes.SIMPLE_EXPRESSION && !exp.isStatic) {
           exp.content = `_ctx.${exp.content}`
         }
-        return prop
       }
-
+      return prop
     })
   }
 }
