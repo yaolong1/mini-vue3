@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编译测试 es-module引入</title>
+</head>
+
+<style>
+  .test {
+    color: red;
+    font-size: large;
+  }
+</style>
+
+<body>
+  <div id="app1"></div>
+  <div id="app2"></div>
+  <div id="app3"></div>
+  <script type="text/x-template" id="name1">
+    <div @Click="change" class="test">{{counter}}方式1</div>
+  </script>
+
+
+  <script type="text/x-template" id="name2">
+    <div @Click="change" class="test">{{counter}} 方式2</div>
+  </script>
+
+
+  <!-- 方式1 -->
+  <script type="module">
+    import { compile, createApp, ref, h } from '../dist/vue.esm-bundler.js'
+    const render = compile('#name1', {}, false) //外部直接创建 第三个参数要切换成非global模式，因为现在是esModule模式
+    const App = {
+      setup() {
+        const counter = ref(1)
+        return {
+          counter,
+          change: () => {
+            counter.value++
+          }
+        }
+      },
+      render() {
+        return render(this) //这里绑定
+      }
+    }
+    createApp(App).mount('#app1')
+
+  </script>
+
+
+  <!-- 方式2 -->
+  <script type="module">
+    import { compile, createApp, ref, h } from '../dist/vue.esm-bundler.js'
+    const App2 = {
+      isGlobal: false, //设置当前为非全局模式
+      template: '#name2',
+      setup() {
+        const counter = ref(1)
+        return {
+          counter,
+          change: () => {
+            counter.value++
+          }
+        }
+      }
+    }
+    createApp(App2).mount('#app2')
+
+  </script>
+
+
+  <!-- 方式3 -->
+  <script type="module">
+    import { compile, createApp, ref, h } from '../dist/vue.esm-bundler.js'
+    const App3 = {
+      isGlobal: false, //设置当前为非全局模式
+      template: '<div @click="change"> {{counter}}方式三 </div>',
+      setup() {
+        const counter = ref(1)
+        return {
+          counter,
+          change: () => {
+            counter.value++
+          }
+        }
+      }
+    }
+    createApp(App3).mount('#app3')
+
+  </script>
+
+</body>
+
+</html>

@@ -10,12 +10,12 @@
 
 - 已实现：
   - ① reactivity: 响应式 APi computed ref toRefs toRef reactive effect readonly shallowReadonly shallowReactive
-  - ② runtime-dom: createApp
-  - ③ runtime-core: createRender (包含 diff 算法)
+  - ② runtime-dom: createApp Transition
+  - ③ runtime-core: createRender (包含 diff 算法) watch KeepAlive Teleport AsyncComponent Emit slots scheduler
   - ④ compiler-dom: parse compile
   - ⑤ template-explorer: 模板浏览器，可用于查看html模板生成的render函数，（由于compiler-core没完全实现，现在只是一个界面）
-- 未实现:
-  - ① compiler-core baseParse(已实现) baseCompile（未实现）
+  - ⑥ compiler-core baseParse baseCompile vBind vOn transformElement transformText transformExpression
+  - ⑦ vue 全局模块，统一导出miniVue3供外部使用
 
 #### 使用说明
 
@@ -33,79 +33,98 @@
   ```
 - 打包单个模块
   ```
-    yarn dev -f 模块名
+    yarn dev -m 模块名
   ```
 
 3. 使用
    将打包好的模块中的 dist 目录下的`xxxx.global.js` 引用到 html 中
 
 ```html
+<style>
+  .test {
+    color: red;
+    font-size: large;
+  }
+</style>
+
 <body>
-  <div id="app"></div>
-  <script src="../dist/runtime-dom.global.js"></script>
+  <div id="app1"></div>
+  <div id="app2"></div>
+  <div id="app3"></div>
+  <script src="../dist/vue.global.js"></script>
+  <script type="text/x-template" id="name1">
+    <div @Click="change" class="test">{{counter}}方式1</div>
+  </script>
+
+
+  <script type="text/x-template" id="name2">
+    <div @Click="change" class="test">{{counter}} 方式2</div>
+  </script>
+
+
   <script>
-    const { createApp, h, reactive, toRefs, ref } = MiniVue3RuntimeDOM;
+    const { compile, createApp, ref } = MiniVue3
+  </script>
 
-    function useCounter() {
-      const data = reactive({ counter: 1 });
-      const add = () => {
-        data.counter++;
-        console.log('xxx');
-      };
-      return { add, ...toRefs(data) };
-    }
-
-    const APP = {
-      props: {
-        title: {
-          type: String,
-        },
-      },
-      setup(props, ctx) {
-        const { add, counter } = useCounter();
-        const flag = ref(true);
-
-        setTimeout(() => {
-          flag.value = !flag.value;
-        }, 2000);
+  <!-- 方式1 -->
+  <script>
+    const render = compile('#name1', { mode: "function" }) //外部直接创建
+    const App = {
+      setup() {
+        const counter = ref(1)
         return {
-          add,
           counter,
-          flag,
-        };
+          change: () => {
+            counter.value++
+          }
+        }
       },
-      render(proxy) {
-        const children1 = [
-          h('li', { key: 'a' }, 'a'),
-          h('li', { key: 'b' }, 'b'),
-          h('li', { key: 'c' }, 'c'),
-          h('li', { key: 'd' }, 'd'),
-          h('li', { key: 'e' }, 'e'),
-          h('li', { key: 'j' }, 'J'),
-          h('li', { key: 'f' }, 'f'),
-          h('li', { key: 'g' }, 'g'),
-        ];
+      render() {
+        return render(this) //这里绑定
+      }
+    }
+    createApp(App).mount('#app1')
 
-        const children2 = [
-          h('li', { key: 'a' }, 'a'),
-          h('li', { key: 'b' }, 'b'),
-          h('li', { key: 'e' }, 'e'),
-          h('li', { key: 'c' }, 'c'),
-          h('li', { key: 'd' }, 'd'),
-          h('li', { key: 'h' }, 'h'),
-          h('li', { key: 'f' }, 'f'),
-          h('li', { key: 'g' }, 'g'),
-        ];
-        const oldNode = h('h1', {}, children1);
-        const newNode = h('h1', {}, children2);
+  </script>
 
-        let vnode = this.flag.value ? oldNode : newNode;
 
-        return vnode;
-      },
-    };
-    const app = createApp(APP, { title: 'test', a: '10' });
-    app.mount('#app');
+  <!-- 方式2 -->
+  <script>
+    const App2 = {
+      mode: 'function', //这里是运行环境 ，vue中是没有的，function是全局引入的模式 module是esm引入模式的
+      template: '#name2',
+      setup() {
+        const counter = ref(1)
+        return {
+          counter,
+          change: () => {
+            counter.value++
+          }
+        }
+      }
+    }
+    createApp(App2).mount('#app2')
+
+  </script>
+
+
+  <!-- 方式3 -->
+  <script>
+    const App3 = {
+      mode: 'function', //这里是运行环境 ，vue中是没有的，function是全局引入的模式 module是esm引入模式的
+      template: '<div @click="change"> {{counter}}方式三 </div>',
+      setup() {
+        const counter = ref(1)
+        return {
+          counter,
+          change: () => {
+            counter.value++
+          }
+        }
+      }
+    }
+    createApp(App3).mount('#app3')
+
   </script>
 </body>
 ```

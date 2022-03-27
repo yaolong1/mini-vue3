@@ -26,7 +26,7 @@ export interface CodegenContext extends Required<CodegenOptions> {
  */
 function createCodegenContext(
   {
-    mode = "module",
+    mode = "function",
     prefixIdentifiers = mode === 'module',
     runtimeModuleName = 'miniVue3',
     runtimeGlobalName = 'MiniVue3'

@@ -156,7 +156,8 @@ export function setupStatefulComponent(instance) {
 
       //如果组件选项存在template,调用编译器生成render函数
       if (compile && Component.template) {
-        instance.render = compile(Component.template, { mode: Component.mode })
+        instance.render = compile(Component.template, {}, Component.isGlobal)
+        //Component.isGlobal这个是我自己加的一个变量，为了区分当前引入mini-vue3的环境
       }
     }
     //TODO
@@ -209,7 +210,8 @@ export function getCurrentInstance() {
 
 type CompileFunction = (
   template: string | object,
-  options?: CompilerOptions
+  options?: CompilerOptions,
+  isGlobal?: boolean
 ) => any
 
 let compile: CompileFunction
