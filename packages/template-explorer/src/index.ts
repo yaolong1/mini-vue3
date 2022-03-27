@@ -3,7 +3,11 @@ import { compile, CompilerOptions } from '@mini-vue3/compiler-dom'
 import { toRaw, effect } from '@mini-vue3/runtime-dom'
 import { SourceMapConsumer } from 'source-map'
 import theme from './theme'
-
+import {
+  defaultOptions,
+  compilerOptions,
+  initOptions,
+} from './options'
 declare global {
   interface Window {
     monaco: typeof m
@@ -61,12 +65,14 @@ window.init = () => {
       const compileFn = compile
       const start = performance.now()
       const { code, ast } = compileFn(source, {
+        ...compilerOptions,
       })
       console.log(`Compiled in ${(performance.now() - start).toFixed(2)}ms.`)
       console.log(`AST: `, ast)
       console.log(`CODE: `, code)
-      lastSuccessfulCode = code + `\n\n// Check the console for the AST`
+      lastSuccessfulCode = code + `\n// Check the console for the AST`
     } catch (e: any) {
+      console.error(e)
       lastSuccessfulCode = `/* ERROR: ${e.message} (see console for more info) */`
     }
     return lastSuccessfulCode
@@ -79,6 +85,15 @@ window.init = () => {
     // every time we re-compile, persist current state
 
     const optionsToSave = {}
+    let key: keyof CompilerOptions
+    for (key in compilerOptions) {
+      const val = compilerOptions[key]
+      if (typeof val !== 'object' && val !== defaultOptions[key]) {
+        // @ts-ignore
+        optionsToSave[key] = val
+      }
+    }
+
 
     const state = JSON.stringify({
       src,
@@ -208,7 +223,7 @@ window.init = () => {
       }
     }, 100)
   )
-
+  initOptions()
   effect(reCompile)
 }
 

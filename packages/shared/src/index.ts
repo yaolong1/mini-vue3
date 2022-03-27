@@ -1,5 +1,10 @@
+
+
 export * from './shapeFlags'
 export * from './domAttrConfig'
+export * from './patchFlags'
+export * from './domTagConfig'
+
 
 export const isObject = (value) => typeof value === 'object' && value !== null
 export const isUndefined = (value) => typeof value === 'undefined'
@@ -22,7 +27,6 @@ export function toTypeString(value) {
 
 const onRE = /^on[^a-z]/
 export const isOn = (key: string) => onRE.test(key)
-
 
 
 
@@ -126,3 +130,6 @@ export function makeMap(
 }
 
 
+export function toDisplayString(val: unknown) {
+  return String(val)
+}

@@ -2,7 +2,7 @@
 
 
 import { createRenderer } from '@mini-vue3/runtime-core';
-import { extend } from '@mini-vue3/shared';
+import { extend, isString } from '@mini-vue3/shared';
 // 渲染页面需要操作节点的代码
 import { nodeOps } from './nodeOps';
 import { patchProp } from './patchProp';
@@ -26,7 +26,9 @@ export const createApp = (rootComponent, rootProps = null) => {
   const app = createApp(rootComponent, rootProps)
   let { mount } = app // 获取core中app的mount
   app.mount = function (container) { //重新mount
-    container = rendererOptions.querySelector(container)
+    if (isString(container)) {
+      container = rendererOptions.querySelector(container)
+    }
     container.innerHTML = '' //清空根元素的children
     mount(container)
   }

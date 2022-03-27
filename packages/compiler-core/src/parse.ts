@@ -9,7 +9,8 @@ import {
   InterpolationNode,
   ElementTypes,
   AttributeNode,
-  DirectiveNode
+  DirectiveNode,
+  ExpressionNode
 } from './ast';
 import { extend } from '@mini-vue3/shared';
 import { ParserOptions } from './options';
@@ -32,16 +33,11 @@ type AttributeValue = {
 
 export interface ParserContext {
   options: ParserOptions
-  // readonly originalSource: string
   source: string
-  // offset: number
-  // line: number
-  // column: number
-  // inPre: boolean // HTML <pre> tag, preserve whitespaces
-  // inVPre: boolean // v-pre, do not process directives and interpolations
 }
 
 const defaultParserOptions: ParserOptions = {
+
   delimiters: ['{{', '}}'], //插值语法
   getTextMode: () => TextModes.DATA, //设置初始模式为DATA模式。在该模式下支持解析标签、支持解析html实体
 }
@@ -160,10 +156,51 @@ function parseChildren(
     } else {
       pushNode(nodes, node)
     }
-
   }
 
-  return nodes
+
+  let removedWhitespace = false;
+  //RAWTEXT、RCDATA模式不会解析html实体所以对于空格特殊字符也不会解析这里要排除
+  // if (mode !== TextModes.RAWTEXT && mode !== TextModes.RCDATA) {
+  const shouldCondense = context.options.whitespace !== 'preserve'
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (node.type === NodeTypes.TEXT) {
+      if (!/[^\t\r\n\f ]/.test(node.content)) {
+      // 全空白的节点
+        const prev = nodes[i - 1];
+        const next = nodes[i + 1];
+        if (
+          !prev ||
+          !next ||
+          (
+            shouldCondense &&
+            (
+              prev.type === NodeTypes.COMMENT ||
+              next.type === NodeTypes.COMMENT ||
+              (prev.type === NodeTypes.ELEMENT &&
+                next.type === NodeTypes.ELEMENT &&
+                /[\r\n]/.test(node.content))
+            )
+          )
+        ) {
+          removedWhitespace = true;
+          nodes[i] = null;
+        } else {
+          // 文本中部分空白
+          // 将空白节点压缩成一个空格的节点
+          node.content = ' ';
+        }
+      } else if (shouldCondense) {
+        //多个空格将压缩成一个空格
+        node.content = node.content.replace(/[\t\r\n\f ]+/g, ' ');
+      }
+    }
+  }
+  // }
+
+  // nodes.filter(Boolean)过滤掉为空的node
+  return removedWhitespace ? nodes.filter(Boolean) : nodes;
 }
 
 //解析元素
@@ -174,7 +211,7 @@ function parseElement(
   //解析开始标签
   const element = parseTag(context, TagType.Start)
   //如果是自闭标签直接返回元素
-  if (element.isSelfClosing) return element
+  if (element.isSelfClosing || context.options.isVoidTag(element.tag)) return element
 
 
   ancestors.push(element)
@@ -221,7 +258,7 @@ function parseComment(
   }
 }
 
-//及解析CDATA
+//解析CDATA
 function parseCDATA(
   context: ParserContext,
 ): TemplateChildNode[] {
@@ -245,7 +282,6 @@ function parseInterpolation(
   if (closeIndex < 0) {
     console.log('没有结束定界符', close)
   }
-  debugger
   //截取定界符之间的内容最为插值表达式
   const preTrimContent = parseTextData(context, closeIndex, mode)
   const content = preTrimContent.trim()
@@ -268,8 +304,8 @@ function parseText(
   mode: TextModes
 ): TextNode {
 
-  //用于存储文本节点下一个节点的开始字符。其中CDATA模式的开始字符是]]> ,插值节点的开始字符是{{,普通标签开始字符是<
-  const endTokens = mode === TextModes.CDATA ? [']]>'] : ['<', context.options.delimiters[0]]
+  //用于存储文本节点下一个节点的开始字符。插值节点的下一个节点的开始字符是{{,普通标签开始字符是<
+  const endTokens = ['<', context.options.delimiters[0]]
 
   //文本内容的最后一个索引，默认是整个source的最后一个。此索引用于截取文本，表示截取最后一个字符的索引 [0,endIndex)
   let endIndex = context.source.length
@@ -404,6 +440,18 @@ function parseAttribute(context: ParserContext, nameSet: Set<string>): Attribute
   nameSet.add(name)
 
   //TODO 属性不允许有特殊字符、= '"<
+  // if (name[0] === '=') {
+  //   console.error('属性名前的意外等号')
+  // }
+  // {
+  //   const pattern = /['"<]/g
+  //   let match
+  //   if((match = pattern.exec(name))) {
+  //     console.log('name中出现意外字符', match[0])
+  //   }
+  // }
+
+
 
   //得到属性名称后消费消费属性名
   advanceBy(context, name.length)
@@ -427,7 +475,104 @@ function parseAttribute(context: ParserContext, nameSet: Set<string>): Attribute
     }
   }
 
-  //TODO 此处还需要处理bind、on、：、slot，v-前缀的属性 
+  // //此处还需要处理bind、on、：、slot，v-前缀的属性
+  // //Directive
+  // if (/^(v-[A-Za-z0-9-]|@|:|#)/.test(name)) {  //匹配以v-、@、:开口的属性名称
+
+  //   //这里的匹配我直接用if else做的，Vue3源码是用正则匹配的
+
+  //   // dirName: 指令名 ,arg 指令参数表达式
+  //   let dirName, arg: ExpressionNode | undefined
+  //   let content = undefined //
+  //   if (startsWith(name, ':')) {
+  //     //如果是 :和. 指令名称就设置为bind
+  //     dirName = 'bind'
+  //     content = name.slice(1)
+  //   } else if (startsWith(name, 'v-')) {
+  //     //name以v-开头指令名称就是v-之后的
+  //     //eg: v-if   dirName = 'if'
+  //     //eg: v-slot:header   dirName = 'slot'  arg='header'
+  //     [dirName, content] = name.slice(2).split(':')
+  //   } else if (startsWith(name, '@')) {
+  //     dirName = 'on'
+  //     content = name.slice(1)
+  //   } else if (startsWith(name, '#')) {
+  //     dirName = 'slot'
+  //     content = name.slice(1)
+  //   }
+
+
+  //   arg = {
+  //     type: NodeTypes.SIMPLE_EXPRESSION,
+  //     content,
+  //     isStatic: true
+  //   }
+
+
+  //   return {
+  //     type: NodeTypes.DIRECTIVE,
+  //     name: dirName, //指令名称
+  //     exp: value && {
+  //       type: NodeTypes.SIMPLE_EXPRESSION,
+  //       content: value.content,
+  //       isStatic: false //指令的值一定是动态的
+  //     }, //指令值表达式
+  //     arg //指令参数表达式
+  //   }
+  // }
+
+
+
+  if (/^(v-[A-Za-z0-9-]|:|\.|@|#)/.test(name)) {
+    const match =
+      /(?:^v-([a-z0-9-]+))?(?:(?::|^\.|^@|^#)(\[[^\]]+\]|[^\.]+))?(.+)?$/i.exec(
+        name
+      );
+
+    let isPropShorthand = startsWith(name, '.');
+    //指令名称
+    let dirName =
+      match[1] ||
+      (isPropShorthand || startsWith(name, ':')
+        ? 'bind'
+        : startsWith(name, '@')
+          ? 'on'
+          : '');
+
+    let arg;
+    if (match[2]) {
+      //动态key
+      let content = match[2];
+      let isStatic = true;
+      if (content.startsWith('[')) {
+        isStatic = false;
+        if (content.endsWith(']')) {
+          content = content.slice(1, content.length - 1);
+        }
+      }
+      arg = {
+        type: NodeTypes.SIMPLE_EXPRESSION,
+        content,
+        isStatic
+      };
+    }
+
+    const modifiers = match[3] ? match[3].slice(1).split('.') : [];
+    if (isPropShorthand) modifiers.push('prop');
+
+    return {
+      type: NodeTypes.DIRECTIVE,
+      name: dirName,
+      exp: value && {
+        type: NodeTypes.SIMPLE_EXPRESSION,
+        content: value.content,
+        isStatic: false
+      },
+      arg,
+      modifiers
+    };
+  
+  }
 
   return {
     type: NodeTypes.ATTRIBUTE,
@@ -467,6 +612,7 @@ function parseAttributeValue(context: ParserContext): AttributeValue {
       )
     } else {
       //如果存在就把endIndex当做截取的最后一个字符索引传入
+      //eg 如果endIndex=6 则截取context.source.slice(0,6)为为content
       content = parseTextData(
         context,
         endIndex,
@@ -484,7 +630,7 @@ function parseAttributeValue(context: ParserContext): AttributeValue {
       return undefined
     }
 
-    //TODO 此处还要判断一个没有引号的情况下，属性值的合法性
+    //此处还要判断一个没有引号的情况下，属性值的合法性
     const unexpectedChars = /["'<=`]/g
     if (unexpectedChars.test(match[1])) {
       console.error('当前的值不合法')
@@ -498,6 +644,8 @@ function parseAttributeValue(context: ParserContext): AttributeValue {
     )
 
   }
+
+
 
   return {
     content,

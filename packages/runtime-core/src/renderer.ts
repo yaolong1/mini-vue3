@@ -331,7 +331,6 @@ function baseCreateRenderer(
       //不知道做什么，推测是用于move()操作 #
       hostInsert(fragmentStartAnchor, container, anchor)
       hostInsert(fragmentEndAnchor, container, anchor)
-      debugger
       //不存在旧节点，直接挂载
       mountChildren(container, n2.children, fragmentEndAnchor)
     } else {
@@ -463,7 +462,7 @@ function baseCreateRenderer(
     if (transition) {
       transition.beforeEnter(el)
     }
-    
+
     hostInsert(el, container, anchor)
 
     //当前虚拟节点是否有过渡====enter

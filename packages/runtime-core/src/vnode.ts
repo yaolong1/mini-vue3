@@ -34,10 +34,14 @@ export interface VNode<
   target: HostElement | null // teleport target
   targetAnchor: HostNode | null // teleport target anchor
   shapeFlag: number,
+  patchFlag: number,
   anchor: HostNode,
   transition?: TransitionHooks,
   keepAliveInstance?: KeepAliveContext//当前虚拟节点的keepAlive实例
 }
+
+
+export { createVNode as createElementVNode }
 
 /**
  * 创建虚拟节点
@@ -45,7 +49,7 @@ export interface VNode<
  * @param props 
  * @param children  
  */
-export function createVNode(type, props = null, children = null): VNode {
+export function createVNode(type, props = null, children = null, patchFlag = 0): VNode {
 
   // 描述虚拟节点的类型
   const shapeFlag =
@@ -68,6 +72,7 @@ export function createVNode(type, props = null, children = null): VNode {
     component: null, //如果当前的当前的vnode是一个组件，应当保存当前组件的实例
     el: null, //虚拟节点对应的虚拟节点
     shapeFlag, // 可以同时描述虚拟节点的类型和它孩子节点的类型 (使用 | & )
+    patchFlag,
     anchor: null,
     target: null,
     targetAnchor: null
@@ -134,4 +139,12 @@ export const normalizeVNode = (child): VNode => {
     return child
   }
   return createVNode(Text, null, String(child))
+}
+
+export function createTextVNode(text: string = '', patchFlag = 0) {
+  return createVNode(Text, null, String(text), patchFlag)
+}
+
+export function createCommentVNode(text) {
+  return createVNode(Comment, null, text)
 }

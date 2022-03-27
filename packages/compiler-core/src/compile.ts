@@ -1,3 +1,5 @@
+import { transformBind } from './transforms/vBind';
+import { transformOn } from './transforms/vOn';
 import { extend, isString } from '@mini-vue3/shared';
 import { ParentNode, RootNode } from './ast';
 import { CodegenResult, generate } from './codegen';
@@ -6,6 +8,7 @@ import { baseParse } from './parse';
 import { transform } from './transform';
 import { transformElement } from './transforms/transformElement';
 import { transformText } from './transforms/transformText';
+import { transformExpression } from './transforms/transformExpression';
 
 
 export function baseCompile(
@@ -24,8 +27,13 @@ export function baseCompile(
     extend({}, options, {
       nodeTransforms: [
         transformElement,
-        transformText
-      ]
+        transformText,
+        transformExpression
+      ],
+      directiveTransforms: {
+        on:transformOn,
+        bind:transformBind
+      }
       //扩展的选项
     })
   )

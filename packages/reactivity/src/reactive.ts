@@ -75,7 +75,7 @@ export const shallowReactiveMap = new WeakMap()
  */
 export function createReactiveObject(target, isReadonly, proxyMap, baseHandlers, collectionHandlers) {
 
-  //如果target是一个响应式对象直接返回原对象
+  //如果target是一个非只读响应式代理对象直接返回原对象
   if (target[ReactiveFlags.RAW] && !(isReadonly && target[ReactiveFlags.IS_REACTIVE])) {
     return target
   }
@@ -85,7 +85,7 @@ export function createReactiveObject(target, isReadonly, proxyMap, baseHandlers,
     return target;
   }
 
-  //判断当前的对象是否是响应式对象，如果是就直接返回
+  //判断当前的对象是否存在proxy，存在就不必创建直接返回
   const existProxy = proxyMap.get(target)
   if (existProxy) {
     return existProxy
@@ -108,7 +108,6 @@ export function createReactiveObject(target, isReadonly, proxyMap, baseHandlers,
 
 export const toReactive = (val) => isObject(val) ? reactive(val) : val
 export const toReadonly = (val) => isObject(val) ? readonly(val) : val
-export const toShallow = (val) => val
 
 //转换为普通对象
 export function toRaw(observed) {

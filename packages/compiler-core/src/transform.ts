@@ -1,5 +1,6 @@
-import { RootNode, TemplateChildNode, ParentNode, NodeTypes } from './ast';
+import { RootNode, TemplateChildNode, ParentNode, NodeTypes, PlainElementNode, ComponentNode, TemplateNode } from './ast';
 import { TransformOptions } from './options';
+import { TO_DISPLAY_STRING, CREATE_COMMENT } from './runtimeHelpers';
 
 
 
@@ -15,26 +16,57 @@ export interface TransformContext extends TransformOptions {
   removeNode: (node?: TemplateChildNode | undefined) => void
   parent: ParentNode | null
   childIndex: number
-  currentNode: RootNode | TemplateChildNode | null
+  currentNode: RootNode | TemplateChildNode | null,
+  helper<T extends symbol>(name: T): T
+  root: RootNode,
+  helpers: Map<symbol, number>
 }
 
 
-export function transform(node: RootNode, options: TransformOptions) {
+export function transform(root: RootNode, options: TransformOptions) {
   //创建一个转换上下文
-  const context = createTransformContext(options)
-  traverseNode(node, context)
+  const context = createTransformContext(root, options)
+  traverseNode(root, context)
+
+  //创建根节点codegen
+  createRootCodegen(root)
+
+  root.helpers = [...context.helpers.keys()]
+}
+
+
+//创建根节点的codegenNode
+function createRootCodegen(root: RootNode) {
+  const { children } = root;
+  if (children.length === 1) {
+    const child = children[0];
+    if (child.type === NodeTypes.ELEMENT && child.codegenNode) {
+      const codegenNode = child.codegenNode;
+      root.codegenNode = codegenNode;
+    } else {
+      root.codegenNode = child;
+    }
+  } else if (children.length > 1) {
+    //TODO Fragment多根节点
+  }
 }
 
 
 
-function createTransformContext({ nodeTransforms = [] }: TransformOptions): TransformContext {
+function createTransformContext(root: RootNode, { nodeTransforms = [], directiveTransforms = {} }: TransformOptions): TransformContext {
   const context = {
-    replaceNode: null,
     removeNode(node) {
       if (context.parent) {
         context.parent.children.splice(context.childIndex, 1)
         context.currentNode = null
       }
+    },
+    //当前节点的替换
+    replaceNode: (node) => {
+      //新节点替换父节点children中childIndex所在的节点
+      context.parent.children[context.childIndex] = node
+      //当前节点替换成目标节点
+      context.currentNode = node
     },
     //当前转换节点的父节点
     parent: null,
@@ -42,7 +74,15 @@ function createTransformContext({ nodeTransforms = [] }: TransformOptions): Tran
     childIndex: 0,
     //当前正在转换的节点
     currentNode: null,
-    nodeTransforms
+    nodeTransforms,
+    directiveTransforms,
+    helper(name) {
+      const count = context.helpers.get(name) || 0
+      context.helpers.set(name, count + 1)
+      return name
+    },
+    root,
+    helpers: new Map(),
   }
   return context
 }
@@ -62,11 +102,21 @@ function traverseNode(node: RootNode | TemplateChildNode, context: TransformCont
         exitFns.push(onExit)
       }
       //如果当前节点为空直接返
-      if (!context.currentNode) return
+      if (!context.currentNode) {
+        return
+      } else {
+        node = context.currentNode
+      }
     }
   }
 
   switch (node.type) {
+    case NodeTypes.COMMENT:
+      context.helper(CREATE_COMMENT)
+      break
+    case NodeTypes.INTERPOLATION:
+      context.helper(TO_DISPLAY_STRING)
+      break
     case NodeTypes.ELEMENT:
     case NodeTypes.ROOT:
       traverseChildren(node, context)
@@ -76,6 +126,7 @@ function traverseNode(node: RootNode | TemplateChildNode, context: TransformCont
   }
 
 
+  context.currentNode = node
   //在此处执行退出阶段的函数就能实现保证孩子节点已经转换完成
   //必须倒叙执行
   let i = exitFns.length
