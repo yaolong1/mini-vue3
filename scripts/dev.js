@@ -6,7 +6,7 @@ const minimist = require('minimist') //命令工具
 
 //获取执行命令的参数
 const args = minimist(process.argv.slice(2)) //前两个是执行的命令 node script/dev.js
-const target = args['f'] ? args['f'] : 'reactivity' //默认打包reactivity
+const target = args['m'] ? args['m'] : 'reactivity' //默认打包reactivity
 
 console.log('当前打包模块:', target)
 

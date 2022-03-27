@@ -1,4 +1,4 @@
-import { isArray, isSymbol } from '@mini-vue3/shared';
+import { isArray, isSymbol, toRawType } from '@mini-vue3/shared';
 import { isObject, isString } from '@mini-vue3/shared';
 import { JSChildNode, NodeTypes, RootNode, TemplateChildNode, TextNode, CommentNode, CallExpression, VNodeCall } from './ast';
 import { CodegenOptions } from './options';
@@ -57,8 +57,10 @@ function createCodegenContext(
     },
     //用来缩进，让currentIndent自减后，调用换行
     deIndent() {
-      context.indentLevel--
-      context.newline()
+      if (context.indentLevel > 0) {
+        context.indentLevel--
+        context.newline()
+      }
     },
   }
   return context
@@ -95,7 +97,7 @@ export function generate(ast: RootNode, options: CodegenOptions): CodegenResult 
   //函数的参数列表
   const signature = args.join(', ')
 
-  push(`function ${functionName} (${signature}) {`)
+  push(`function ${functionName}(${signature}) {`)
   indent()
 
   //采用with(this){}
@@ -245,7 +247,7 @@ function genElement(node, context: CodegenContext) {
   const { tag, children, props, patchFlag } = node;
 
   // tag
-  push(`${context.helper(CREATE_ELEMENT_VNODE)} (${tag}, `);
+  push(`${context.helper(CREATE_ELEMENT_VNODE)}(${tag}, `);
 
   // props
   if (props) {
@@ -321,9 +323,10 @@ function genChildren(children, context) {
   const { push, indent, deIndent } = context;
 
 
-  if (isObject(children) && children.type === NodeTypes.TEXT) {
+  if (toRawType(children) === 'Object') {
+    indent();
     genNode(children, context);
-  } if (children.type === NodeTypes.COMPOUND_EXPRESSION) {
+  } else if (children.type === NodeTypes.COMPOUND_EXPRESSION) {
     genCompoundExpression(children, context);
   } else {
     push('[');
@@ -333,7 +336,6 @@ function genChildren(children, context) {
       genNode(child.codegenNode || child.children || child, context);
       push(', ');
     }
-    indent();
     push(']');
   }
 
@@ -350,7 +352,7 @@ function genInterpolation(node, context) {
   const { push, helper } = context;
   const { content } = node;
 
-  push(`${helper(TO_DISPLAY_STRING)} (${content.content})`)
+  push(`${helper(TO_DISPLAY_STRING)}(${content.content})`)
 }
 
 

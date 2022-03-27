@@ -6,6 +6,7 @@ import { emit } from "./componentEmits"
 import { initProps } from "./componentProps"
 import { PublicInstanceProxyHandler } from "./componentPublicInstance"
 import { initSlots, InternalSlots } from "./componentSlots"
+import { CompilerOptions } from '@mini-vue3/compiler-core';
 
 //生命周期枚举
 export const enum LifecycleHooks {
@@ -27,6 +28,8 @@ export const enum LifecycleHooks {
 
 
 export type Data = Record<string, unknown>
+
+
 
 export interface ComponentInternalInstance {
   next: VNode | null,//组件要更新的节点
@@ -142,14 +145,23 @@ export function setupStatefulComponent(instance) {
     }
   }
 
+
   // 如果执行完setup发现没有instance.render或者setup是空的,
   if (!instance.render) {
     // 执行组件的render并值给instance.render
     instance.render = render
 
     // 如果组件也没有写render函而是写的template => 就要执行模板编译把template编译成render函数
+    if (!render) {
+
+      //如果组件选项存在template,调用编译器生成render函数
+      if (compile && Component.template) {
+        instance.render = compile(Component.template, { mode: Component.mode })
+      }
+    }
     //TODO
   }
+
   console.log('初始化setup', instance)
 }
 
@@ -193,4 +205,15 @@ export function setCurrentInstance(instance) {
 
 export function getCurrentInstance() {
   return currentInstance
+}
+
+type CompileFunction = (
+  template: string | object,
+  options?: CompilerOptions
+) => any
+
+let compile: CompileFunction
+
+export function registerRuntimeCompiler(_compile: any) {
+  compile = _compile
 }
