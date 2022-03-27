@@ -40,6 +40,16 @@
    将打包好的模块中的 dist 目录下的`xxxx.global.js` 引用到 html 中
 
 ```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编译测试 全局引入Global</title>
+</head>
+
 <style>
   .test {
     color: red;
@@ -57,6 +67,7 @@
   </script>
 
 
+
   <script type="text/x-template" id="name2">
     <div @Click="change" class="test">{{counter}} 方式2</div>
   </script>
@@ -68,7 +79,7 @@
 
   <!-- 方式1 -->
   <script>
-    const render = compile('#name1', { mode: "function" }) //外部直接创建
+    const render = compile('#name1') //外部直接创建 需要将全局模式
     const App = {
       setup() {
         const counter = ref(1)
@@ -91,7 +102,6 @@
   <!-- 方式2 -->
   <script>
     const App2 = {
-      mode: 'function', //这里是运行环境 ，vue中是没有的，function是全局引入的模式 module是esm引入模式的
       template: '#name2',
       setup() {
         const counter = ref(1)
@@ -111,7 +121,6 @@
   <!-- 方式3 -->
   <script>
     const App3 = {
-      mode: 'function', //这里是运行环境 ，vue中是没有的，function是全局引入的模式 module是esm引入模式的
       template: '<div @click="change"> {{counter}}方式三 </div>',
       setup() {
         const counter = ref(1)
@@ -127,6 +136,8 @@
 
   </script>
 </body>
+
+</html>
 ```
 
 #### 参与贡献
