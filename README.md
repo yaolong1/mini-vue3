@@ -11,11 +11,11 @@
 - 已实现：
   - ① reactivity: 响应式 APi computed ref toRefs toRef reactive effect readonly shallowReadonly shallowReactive
   - ② runtime-dom: createApp Transition
-  - ③ runtime-core: createRender (包含 diff 算法) watch KeepAlive Teleport AsyncComponent Emit slots scheduler
+  - ③ runtime-core: createRender (包含 diff 算法) watch KeepAlive Teleport AsyncComponent Emit slots scheduler 组件生命周期
   - ④ compiler-dom: parse compile
-  - ⑤ template-explorer: 模板浏览器，可用于查看html模板生成的render函数，（由于compiler-core没完全实现，现在只是一个界面）
+  - ⑤ template-explorer: 模板浏览器，可用于查看html模板生成的render函数
   - ⑥ compiler-core baseParse baseCompile vBind vOn transformElement transformText transformExpression
-  - ⑦ vue 全局模块，统一导出miniVue3供外部使用
+  - ⑦ vue 全局模块，统一导出miniVue3供外部使用 支持global引入和esModule方式引入
 
 #### 使用说明
 

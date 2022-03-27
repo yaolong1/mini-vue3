@@ -177,7 +177,7 @@ function createSetter(isShallow = false) { //拦截对象设置
         trigger(target, TriggerOpTypes.SET, key, value, oldValue)
       }
     }
-    console.log('触发依赖')
+    // console.log('触发依赖')
     return res
   }
 }

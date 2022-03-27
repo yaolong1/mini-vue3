@@ -50,9 +50,9 @@ function createInvoker(nextValue) {
     // }).mount('#app')
 
     const timeStamp = e.timeStamp //事件触发的时间
-    console.log('事件触发时间', e.timeStamp)
-    console.log('事件创建时间', invoker.attached)
-    console.log('触发函数', invoker.value)
+    // console.log('事件触发时间', e.timeStamp)
+    // console.log('事件创建时间', invoker.attached)
+    // console.log('触发函数', invoker.value)
     if (timeStamp < invoker.attached) return
 
     // 一个事件有可能会绑定多个方法 addEventLister('onClick',fn1) addEventLister('onClick',fn2) 点击时会执行fn1和fn2 《vue.js 设计与实现》 #200页
