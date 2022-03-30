@@ -6,13 +6,15 @@ import { extend, isOn } from "@mini-vue3/shared"
  * @param instance  组件实例
  * @param rawProps  传入的props =>const app = createApp(component,传入的props)
  * @param data  响应式对象
+ * @param isSSR  是否是ssr环境
  */
-export function initProps(instance, rawProps, isStateful) {
+export function initProps(instance, rawProps, isStateful, isSSR = false) {
   instance.data = reactive(instance.data)
   const { props, attrs } = resolveProps(instance.propsOptions, rawProps)
 
   if (isStateful) {
-    instance.props = props
+    //如果当前是ssr环境不需要创建响应式数据，因为ssr渲染的只是一个快照不需要响应式
+    instance.props = isSSR ? props : shallowReactive(props)
   } else {
     //当前的组件是无状态的，是一个函数式组件，直接props == attrs
     instance.props = attrs
@@ -59,7 +61,7 @@ export function resolveProps(propsOptions, rawProps) {
   }
 
   return {
-    props: shallowReactive(props),
+    props: props,
     attrs
   }
 }

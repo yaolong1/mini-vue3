@@ -482,8 +482,12 @@ function baseCreateRenderer(
 
     // 将组件的vnode渲染到容器中
     const componentOptions = initialVNode.type
+
+  
     const { beforeCreate, created } = componentOptions
     beforeCreate && beforeCreate()
+    console.log('生命周期 beforeCreate 调用')
+
     // 1、给组件创造一个组件实例 
     const instance = initialVNode.component = createComponentInstance(initialVNode)
 
@@ -495,8 +499,12 @@ function baseCreateRenderer(
 
     // 2、给组件的实例进行赋值
     setupComponent(instance)
+
+    
     //创建实例之后
     created && created.call(instance.proxy)
+    console.log('生命周期 created 调用')
+
     // 3、调用render方法实现组件的渲染逻辑（首次渲染即需要render函数中所有依赖的响应式对象 =>依赖收集）
     // 这里就会使用reactiveEffect，因为视图和数据时双向绑定的 数据变->视图变
     setupRenderEffect(initialVNode, instance, container, anchor)

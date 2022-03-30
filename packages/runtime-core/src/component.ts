@@ -1,3 +1,4 @@
+import { isPromise } from './../../shared/src/index';
 import { VNode } from './vnode';
 import { proxyRefs, shallowReadonly } from "@mini-vue3/reactivity"
 import { isFunction, isObject, ShapeFlags } from "@mini-vue3/shared"
@@ -26,11 +27,44 @@ export const enum LifecycleHooks {
   SERVER_PREFETCH = 'sp'
 }
 
+export interface RuntimeCompilerOptions {
+  isCustomElement?: (tag: string) => boolean
+  whitespace?: 'preserve' | 'condense'
+  comments?: boolean
+  delimiters?: [string, string]
+}
 
 export type Data = Record<string, unknown>
 
+export type Component = ComponentOptions | FunctionalComponent
+
+export type ComponentOptions = baseComponentOptions
+
+export interface FunctionalComponent {
+  (props: Data, ctx: Omit<SetupContext, 'expose'>): any
+  props?: Data
+  emits?: string[]
+}
+
+export interface baseComponentOptions {
+  name?: string,
+  setup?: (this, props, ctx: SetupContext) => any,
+  render?: (this, props, setup, data, options) => any,
+  props?: Data,
+  template?: string | object,
+  emits: string[],
+  expose?: string[]
+  components?: Record<string, Component>,
+  compilerOptions?: RuntimeCompilerOptions
+}
 
 
+export interface SetupContext {
+  attrs: Data,
+  slots: any,
+  emit: any,
+  expose: (exposed) => any
+}
 export interface ComponentInternalInstance {
   next: VNode | null,//组件要更新的节点
   vnode: VNode | null, // 实例对应的虚拟节点
@@ -114,9 +148,9 @@ function createSetupContext(instance) {
  * setup有可能返回 h(),也有可能返回一个{}
  * @param instance 
  */
-export function setupStatefulComponent(instance) {
+export function setupStatefulComponent(instance, isSSR = false) {
   const Component = instance.type
-  const { setup, render } = Component
+  const { setup } = Component
 
   // 创建一个代理对象来聚合所有响应式的对象
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandler)
@@ -129,22 +163,58 @@ export function setupStatefulComponent(instance) {
 
     //设置当前实例
     setCurrentInstance(instance)
-    let setupResult = setup(shallowReadonly(instance.props), setupContext)
+    const setupResult = setup(shallowReadonly(instance.props), setupContext)
     setCurrentInstance(null)
 
     enableTracking()
 
-
-    //如果setup是函数就是一个render()
-    if (isFunction(setupResult)) {
-      if (render) console.error('setup返回渲染函数,忽略render函数')
-      instance.render = setupResult
-      // 如果是对象就是setupState
-    } else if (isObject(setupResult)) {
-      instance.setupState = proxyRefs(setupResult)
+    if (isPromise(setupResult)) {
+      if (isSSR) {
+        //异步 
+        return setupResult.then((resolvedResult) => handleSetupResult(instance, resolvedResult, isSSR))
+      }
+    } else {
+      handleSetupResult(instance, setupResult, isSSR)
     }
+  } else {
+    finishComponentSetup(instance, isSSR)
+  }
+  console.log('初始化setup', instance)
+}
+
+
+function handleSetupResult(instance, setupResult, isSSR = false) {
+
+  const { render } = instance.type
+  //如果setup是函数就是一个render()
+  if (isFunction(setupResult)) {
+
+    //TODO 这里在vue3源码中会判断当前环境是否是SSR环境，如果是SSR环境则设置 instance.ssrRender = setupResult
+
+    // if (__SSR__ && (instance.type as ComponentOptions).__ssrInlineRender) {
+    //当函数名是' ssrRender '(由SFC内联模式编译)，  
+    //将其设置为ssrRender。
+    //   instance.ssrRender = setupResult
+    // } 
+
+    if (render) console.warn('setup返回渲染函数,忽略render函数')
+    instance.render = setupResult
+    // 如果是对象就是setupState
+  } else if (isObject(setupResult)) {
+    //proxyRefs用于把ref单值响应式.value去掉
+    instance.setupState = proxyRefs(setupResult)
   }
 
+  finishComponentSetup(instance, isSSR)
+}
+
+
+
+//组件安装完成的处理
+function finishComponentSetup(instance, isSSR) {
+
+  const Component = instance.type
+  const { render } = Component
 
   // 如果执行完setup发现没有instance.render或者setup是空的,
   if (!instance.render) {
@@ -152,7 +222,8 @@ export function setupStatefulComponent(instance) {
     instance.render = render
 
     // 如果组件也没有写render函而是写的template => 就要执行模板编译把template编译成render函数
-    if (!render) {
+    //如果当前是SSR服务端渲染直接跳过
+    if (!render && !isSSR) {
 
       //如果组件选项存在template,调用编译器生成render函数
       if (compile && Component.template) {
@@ -162,12 +233,16 @@ export function setupStatefulComponent(instance) {
     }
     //TODO
   }
-
-  console.log('初始化setup', instance)
 }
 
+//导出当前setup是否是在ssr状态下
+export let isInSSRComponentSetup = false
 
-export function setupComponent(instance) {
+
+export function setupComponent(instance, isSSR = false) {
+
+  //在执行setup之前设置当前的组件是否是ssr状态,默认是false
+  isInSSRComponentSetup = isSSR
 
   //是否是有状态的组件
   const isStateful = isStatefulComponent(instance)
@@ -175,16 +250,17 @@ export function setupComponent(instance) {
   // 组件的虚拟节点
   const { props, children } = instance.vnode
   // 组件的props初始化、 attrs初始化、data初始化
-  initProps(instance, props, isStateful)
+  initProps(instance, props, isStateful, isSSR)
   // 插槽初始化
-  //TODO
   initSlots(instance, children)
 
   // 如果是普通组件就初始化setup
   const setupResult = isStateful
-    ? setupStatefulComponent(instance)
+    ? setupStatefulComponent(instance, isSSR)
     : undefined
 
+  //setup执行完毕后将组件setup状态设置为false
+  isInSSRComponentSetup = false
   return setupResult
 }
 
@@ -216,6 +292,7 @@ type CompileFunction = (
 
 let compile: CompileFunction
 
+//注册运行时的编译器
 export function registerRuntimeCompiler(_compile: any) {
   compile = _compile
 }

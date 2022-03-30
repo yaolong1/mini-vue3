@@ -2,7 +2,7 @@ import { TransitionHooks } from '@mini-vue3/runtime-core';
 import { RendererNode, RendererElement } from './renderer';
 import { isTeleport, TeleportImpl } from './components/Teleport';
 import { isArray, isFunction, ShapeFlags, isObject, isString } from '@mini-vue3/shared';
-import { ComponentInternalInstance } from './component';
+import { ComponentInternalInstance, Component } from './component';
 import { KeepAliveContext } from './components/KeepAlive';
 
 
@@ -10,6 +10,7 @@ export type VNodeTypes =
   | string
   | VNode
   | Object
+  | Component
   | typeof Text
   | typeof Comment
   | typeof Fragment
@@ -135,7 +136,7 @@ export const normalizeVNode = (child): VNode => {
     return createVNode(Comment)
   } else if (isArray(child)) {
     return createVNode(Fragment, null, child.slice())
-  } else if (isObject(child)) {
+  } else if (typeof child  === 'object') {
     return child
   }
   return createVNode(Text, null, String(child))

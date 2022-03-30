@@ -1,4 +1,4 @@
-import { isOn, isVoidTag, isArray, isString, isSSRSafeAttrName, isBooleanAttr, escapeHtml, includeBooleanAttr } from '@mini-vue3/shared';
+import { isOn, isVoidTag, isArray, isString, isSSRSafeAttrName, isBooleanAttr, escapeHtml, includeBooleanAttr, isFunction } from '@mini-vue3/shared';
 import { VNode } from "mini-vue3";
 
 //将虚拟dom渲染成HTML字符
@@ -86,5 +86,18 @@ function renderDynamicAttr(key, value) {
 
 //将组件渲染成html字符串
 function renderComponentVNode(vnode: VNode) {
-  const { } = vnode
+  const { type, props, children } = vnode
+
+
+  let componentOptions = vnode.type
+
+  //函数式组件
+  if (isFunction(type)) {
+    componentOptions = {
+      render: vnode.type,
+      //@ts-ignore
+      props: vnode.type.props
+    }
+  }
+
 }

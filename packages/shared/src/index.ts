@@ -6,7 +6,7 @@ export * from './patchFlags'
 export * from './domTagConfig'
 export * from './escapeHtml'
 
-export const isObject = (value) => typeof value === 'object' && value !== null
+export const isObject = (value): value is Record<any, any> => typeof value === 'object' && value !== null
 export const isUndefined = (value) => typeof value === 'undefined'
 
 //继承对象
@@ -106,15 +106,17 @@ export function toRawType(value) {
     })
     data.key1 = NaN // 两个值压根没变,但是NaN === NaN 却为false最终还是会触发更新。 解决方案  使用Object.is(NaN,NaN) 为true   更加严格
  */
-export const hasChanged = (newValue, oldValue) => !Object.is(newValue, oldValue)
+export const hasChanged = (newValue: unknown, oldValue: unknown) => !Object.is(newValue, oldValue)
 
-export const isFunction = (value): value is Function => typeof value === 'function'
+export const isFunction = (value: unknown): value is Function => typeof value === 'function'
 
-export const isString = (value): value is String => typeof value === 'string'
+export const isString = (value: unknown): value is String => typeof value === 'string'
 
 export const isSymbol = (val: unknown): val is symbol => typeof val === 'symbol'
 
-
+export const isPromise = <T = any>(val: unknown): val is Promise<T> => {
+  return isObject(val) && isFunction(val.then) && isFunction(val.catch)
+}
 
 
 export function makeMap(
