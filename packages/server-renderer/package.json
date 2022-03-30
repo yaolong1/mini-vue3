@@ -1,0 +1,16 @@
+{
+  "name": "@mini-vue3/server-renderer",
+  "version": "1.0.0",
+  "description": "服务端渲染模块",
+  "main": "index.js",
+  "module": "dist/server-renderer.esm-bundler.js",
+  "unpkg": "dist/server-renderer.global.js",
+  "buildOptions": {
+    "name": "MiniVue3ServerRenderer",
+    "formats": [
+      "cjs",
+      "esm-bundler",
+      "global"
+    ]
+  }
+}
