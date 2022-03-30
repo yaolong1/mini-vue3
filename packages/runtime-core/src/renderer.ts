@@ -144,10 +144,14 @@ function baseCreateRenderer(
 
   // 调用render函数用 把render函数放进ReactiveEffect中
   const setupRenderEffect = (initialVNode, instance, container, anchor) => {
+
+    //options生命周期
+    const { beforeMount, mounted, beforeUpdate, updated } = initialVNode.type
+
+
     console.log('初始化调用render')
     // 创建渲染effect
     // 核心是调用render, 数据发生变化就会重新调用render
-    const { beforeMount, mounted, beforeUpdate, updated } = initialVNode.type
     const componentUpdateFn = () => {
       const { bm, m, u, bu, proxy } = instance
 
@@ -199,6 +203,7 @@ function baseCreateRenderer(
           // 触发onUpdated
           invokeArrayFns(u)
         }
+        
         updated && updated.call(proxy)
       }
     }
