@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>虚拟节点生成html字符</title>
+</head>
+
+<body>
+
+  <div id="name">
+    <div @click="onClick" disabled key="1" ref="ss" :m="a">
+      <hr />
+      <h1>name1</h1>
+      <h1>name2</h1>
+      <h1>name3</h1>
+      <h1>name4</h1>
+    </div>
+  </div>
+
+  <script src="../dist/server-renderer.global.js"></script>
+  <script src="../../vue/dist/vue.global.js"></script>
+
+  <script>
+    const { renderElementVNode } = MiniVue3ServerRenderer
+    const { compile } = MiniVue3
+
+    const render = compile('#name', { whitespace: 'condense' })
+    console.log(render({ onClick: () => { console.log(1111) }, a: 10 }))
+    let html = renderElementVNode(render({ onClick: () => { console.log(1111) }, a: 10 }))
+    console.log(html)
+  </script>
+</body>
+
+</html>

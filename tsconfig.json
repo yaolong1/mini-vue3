@@ -94,7 +94,8 @@
     "paths": {
       "@mini-vue3/*": [
         "packages/*/src"
-      ]
+      ],
+      "mini-vue3":["packages/vue/src"]
     }
   }
 }

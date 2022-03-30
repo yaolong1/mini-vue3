@@ -4,7 +4,7 @@ export * from './shapeFlags'
 export * from './domAttrConfig'
 export * from './patchFlags'
 export * from './domTagConfig'
-
+export * from './escapeHtml'
 
 export const isObject = (value) => typeof value === 'object' && value !== null
 export const isUndefined = (value) => typeof value === 'undefined'
