@@ -1,8 +1,6 @@
-import { isPromise } from './../../shared/src/index';
 import { VNode } from './vnode';
-import { proxyRefs, shallowReadonly } from "@mini-vue3/reactivity"
-import { isFunction, isObject, ShapeFlags } from "@mini-vue3/shared"
-import { enableTracking, pauseTracking } from "packages/reactivity/src/effect"
+import { proxyRefs, shallowReadonly, enableTracking, pauseTracking } from "@mini-vue3/reactivity"
+import { isFunction, isObject, ShapeFlags, isPromise } from "@mini-vue3/shared"
 import { emit } from "./componentEmits"
 import { initProps } from "./componentProps"
 import { PublicInstanceProxyHandler } from "./componentPublicInstance"
@@ -49,9 +47,10 @@ export interface FunctionalComponent {
 export interface baseComponentOptions {
   name?: string,
   setup?: (this, props, ctx: SetupContext) => any,
-  render?: (this, props, setup, data, options) => any,
+  render?: Function,
   props?: Data,
   template?: string | object,
+  ssrRender?: Function,
   emits: string[],
   expose?: string[]
   components?: Record<string, Component>,
@@ -74,10 +73,12 @@ export interface ComponentInternalInstance {
   props: Data, // 组件属性 //组件中定义了的propsOptions叫做props
   attrs: Data, // 除了props中的属性 //没定义的叫attrs
   slots: InternalSlots, // 组件的插槽
+  ssrRender?: Function | null, //ssr 渲染函数
   data: Data, //data响应式对象
   update: Function,//当前实例的effectRunner
   setupState: Data, // 组件中setup的返回值 {方法，属性} 
   propsOptions: Object, // 组件中的props选项 const component = {props:{title:{type:String,default:'xxx'}}}
+  parent: ComponentInternalInstance,
   proxy: any, // 实例的代理对象  
   render: Function, // 组件的渲染函数
   emit: Function, // 事件的触发
@@ -91,7 +92,7 @@ export interface ComponentInternalInstance {
   bum: Function[] | null,//beforeUnmount
 }
 
-export function createComponentInstance(vnode) {
+export function createComponentInstance(vnode, parent) {
   const type = vnode.type // 用户自己传入的属性
   const data = (type.data && isFunction(type.data) ? type.data() : type.data) || {}
   const instance: ComponentInternalInstance = {
@@ -103,6 +104,7 @@ export function createComponentInstance(vnode) {
     attrs: {}, // 除了props中的属性 //没定义的叫attrs
     slots: {}, // 组件的插槽
     next: null,
+    parent,
     data, //data响应式对象
     update: () => { },//当前实例的effectRunner
     setupState: {}, // 组件中setup的返回值 {方法，属性} 
@@ -156,7 +158,7 @@ export function setupStatefulComponent(instance, isSSR = false) {
   instance.proxy = new Proxy(instance.ctx, PublicInstanceProxyHandler)
   if (setup) {
     const setupContext = createSetupContext(instance)
-    //setup()返回值有两种情况，有可能返回 h() ==》vnode,也有可能返回一个{} ==> setupState
+    //setup()返回值有两种情况，有可能返回 h() ==> vnode,也有可能返回一个{} ==> setupState
 
     //setup中的props是只读的
     pauseTracking() // 暂停收集依赖，setup中的

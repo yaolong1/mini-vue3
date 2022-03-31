@@ -1,5 +1,4 @@
-import { Comment } from './../../../runtime-core/src/vnode';
-import { VNode, isKeepAlive, Fragment, toRaw, TransitionHooks, TransitionProps } from "@mini-vue3/runtime-core"
+import { VNode, isKeepAlive, Fragment, toRaw, TransitionHooks, TransitionProps, Comment } from "@mini-vue3/runtime-core"
 
 function getKeepAliveChild(vnode: VNode): VNode | undefined {
   return isKeepAlive(vnode)

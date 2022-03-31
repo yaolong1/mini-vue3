@@ -1,8 +1,16 @@
-import { isOn, isVoidTag, isArray, isString, isSSRSafeAttrName, isBooleanAttr, escapeHtml, includeBooleanAttr, isFunction } from '@mini-vue3/shared';
-import { VNode } from "mini-vue3";
+import { isOn, isVoidTag, isArray, isString, isSSRSafeAttrName, isBooleanAttr, escapeHtml, includeBooleanAttr, isFunction, ShapeFlags } from '@mini-vue3/shared';
+import { VNode, ssrUtils, ComponentInternalInstance, Text, Comment, Fragment, normalizeVNode } from "mini-vue3";
+
+const {
+  setupComponent,
+  renderComponentRoot,
+  createComponentInstance,
+
+} = ssrUtils
+
 
 //将虚拟dom渲染成HTML字符
-export function renderElementVNode(vnode: VNode): string {
+function renderElementVNode(vnode: VNode, parentComponent): string {
   const { type: tag, props, children } = vnode
 
   //1开始标签
@@ -26,7 +34,7 @@ export function renderElementVNode(vnode: VNode): string {
   if (children) {
     if (isArray(children)) {
       //5.1children是数组
-      children.forEach(child => ret += renderElementVNode(child))
+      ret += renderVNodeChildren(children, parentComponent)
     } else if (isString(children)) {
       //5.2children是字符串
       ret += children
@@ -85,19 +93,89 @@ function renderDynamicAttr(key, value) {
 
 
 //将组件渲染成html字符串
-function renderComponentVNode(vnode: VNode) {
-  const { type, props, children } = vnode
+function renderComponentVNode(vnode: VNode, parentComponent: ComponentInternalInstance) {
+  //初始化组件实例
+  const instance = createComponentInstance(vnode, parentComponent)
+
+  setupComponent(instance, true /*isSSR*/)
+
+  //将subTree渲染
+  return renderComponentSubTree(instance)
+}
 
 
-  let componentOptions = vnode.type
+//生成subtree
+function renderComponentSubTree(instance) {
+  const Comp = instance.type
+  //函数式组件，返回就是render函数直接渲染即可
+  if (isFunction(Comp)) {
 
-  //函数式组件
-  if (isFunction(type)) {
-    componentOptions = {
-      render: vnode.type,
-      //@ts-ignore
-      props: vnode.type.props
+    //组件的subTree也就是vnode
+    const vnode = instance.subTree = renderComponentRoot(instance)
+
+    //根据vnode生成html字符
+    return renderVNode(vnode, instance)
+  } else {
+    //普通的组件
+    if (
+      !instance.render ||
+      !Comp.ssrRender &&
+      !instance.ssrRender &&
+      isString(Comp.template)
+    ) {
+      //如果instance中没有render或者 instance和Comp没有ssrRender 但是Comp中存在template
+      //调用ssr编译器编译
+      //TODO 此处的SSR编译器没有实现  return ssrCompiler(Comp.template,instance)
+    } else if (instance.render) {
+
+      const vnode = instance.subTree = renderComponentRoot(instance)
+      return renderVNode(vnode, instance)
     }
   }
 
+}
+
+/**
+ * 
+ * @param vnode 
+ */
+export function renderVNode(vnode: VNode, parentComponent) {
+  const { type, shapeFlag, children } = vnode
+
+  //渲染完成的html字符
+  let ret = ''
+  switch (type) {
+    case Text:
+      ret += `${escapeHtml(children)}`
+      break;
+    case Comment:
+      //如果没有值说明是一个占位的，直接拼接一个空的
+      ret += children ? `<!--${children}-->` : '<!---->'
+      break;
+    case Fragment:
+      //<!--[-->为Fragment的定界符
+      ret += `<!--[-->${renderVNodeChildren(children, parentComponent)}<!--]-->`
+      break;
+    default:
+      if (shapeFlag & ShapeFlags.COMPONENT) {
+        // console.log('ssrRender-------COMPONENT')
+        ret += renderComponentVNode(vnode, parentComponent)
+      } else if (shapeFlag & ShapeFlags.ELEMENT) {
+        // console.log('ssrRender-------ELEMENT')
+        ret += renderElementVNode(vnode, parentComponent)
+      }
+  }
+
+  return ret
+
+}
+
+
+export function renderVNodeChildren(children: VNode[], parentComponent) {
+  let ret = ''
+  for (let i = 0; i < children.length; i++) {
+    const child = normalizeVNode(children[i])
+    ret += renderVNode(child, parentComponent)
+  }
+  return ret
 }

@@ -20,16 +20,36 @@
     </div>
   </div>
 
+  <div id="app"></div>
+
   <script src="../dist/server-renderer.global.js"></script>
   <script src="../../vue/dist/vue.global.js"></script>
 
   <script>
-    const { renderElementVNode } = MiniVue3ServerRenderer
-    const { compile } = MiniVue3
+    // const { renderVNode } = MiniVue3ServerRenderer
+    const { compile, h, Fragment, createApp, ref, renderVNode } = MiniVue3
 
-    const render = compile('#name', { whitespace: 'condense' })
-    console.log(render({ onClick: () => { console.log(1111) }, a: 10 }))
-    let html = renderElementVNode(render({ onClick: () => { console.log(1111) }, a: 10 }))
+    // const render = compile('#name', { whitespace: 'condense' })
+    // const vnode1 = render({ onClick: () => { console.log(1111) }, a: 10 })
+    const Comp = {
+      name: '测试',
+      setup() {
+        const counter = ref(1)
+        const change = () => {
+          counter.value++
+        }
+        return () => h('div', [h('div', { style: 'color:red' }, counter.value), 'Text', h('button', { onClick: change }, '1')])
+      }
+    }
+    const vnode2 = h(Fragment, [
+      h(Comp, {})
+     /*组件*/,
+      h('span', 'span')/*元素*/
+    ])
+
+    //vnode渲染成HTML字符
+    let html = renderVNode(vnode2, null)
+    document.getElementById('app').innerHTML = html
     console.log(html)
   </script>
 </body>

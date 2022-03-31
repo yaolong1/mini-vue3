@@ -1,3 +1,4 @@
+import { ComponentInternalInstance } from './../component';
 import { isString, ShapeFlags } from '@mini-vue3/shared';
 import { RendererElement, RendererInternals, RendererNode, RendererOptions } from './../renderer';
 import { VNode } from './../vnode';
@@ -32,7 +33,7 @@ const resolveTarget = <T = RendererElement>(props: TeleportProps, select: Render
 
 export const TeleportImpl = {
   __isTeleport: true,
-  process(n1: TeleportVNode, n2: TeleportVNode, container, anchor, internals: RendererInternals) {
+  process(n1: TeleportVNode, n2: TeleportVNode, container, anchor, parentComponent: ComponentInternalInstance, internals: RendererInternals) {
 
     const { p: patch, mc: mountChildren, pc: patchChildren, m: move, o: { querySelector, createText, insert } } = internals
 
@@ -42,7 +43,7 @@ export const TeleportImpl = {
       // insert anchors in the main view
       const placeholder = (n2.el = createText('teleport start'))
       const mainAnchor = (n2.anchor = createText('teleport end'))
-      
+
       insert(placeholder, container, anchor)
       insert(mainAnchor, container, anchor)
 
@@ -73,7 +74,7 @@ export const TeleportImpl = {
       }
     } else {
       //更新
-      patchChildren(n1, n2, container, anchor)
+      patchChildren(n1, n2, container, anchor, parentComponent)
       if (n1.props.to != n2.props.to) {
         // 如果移动的元素不同说明需要更新移动的位置
         const newTarget = querySelector(n2.props.to)

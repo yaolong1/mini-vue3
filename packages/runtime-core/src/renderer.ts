@@ -44,6 +44,7 @@ type PatchChildrenFn = (
   n2: VNode,
   container: RendererElement,
   anchor: RendererNode | null,
+  rootComponent: ComponentInternalInstance | null
 ) => void
 
 
@@ -61,6 +62,7 @@ export type MountComponentFn = (
   initialVNode: VNode,
   container: RendererElement,
   anchor: RendererNode | null,
+  rootComponent: ComponentInternalInstance | null,
 ) => void
 
 export interface RendererInternals {
@@ -166,7 +168,7 @@ function baseCreateRenderer(
           invokeArrayFns(bm)
         }
         beforeMount && beforeMount.call(proxy) // beforeMount钩子
-        patch(null, subTree, container, anchor)
+        patch(null, subTree, container, anchor, instance)
         initialVNode.el = subTree.el
         instance.isMounted = true
 
@@ -197,13 +199,13 @@ function baseCreateRenderer(
           invokeArrayFns(bu)
         }
         beforeUpdate && beforeUpdate.call(proxy)
-        patch(prevTree, nextTree, container, anchor)
+        patch(prevTree, nextTree, container, anchor, instance)
 
         if (u) {
           // 触发onUpdated
           invokeArrayFns(u)
         }
-        
+
         updated && updated.call(proxy)
       }
     }
@@ -223,7 +225,7 @@ function baseCreateRenderer(
    * @param container 
    * @param anchor 
    */
-  function updateComponent(n1, n2, container, anchor) {
+  function updateComponent(n1, n2) {
     //复用老的组件实例
     const instance = n2.component = n1.component as ComponentInternalInstance
     const { props, attrs } = instance
@@ -274,7 +276,7 @@ function baseCreateRenderer(
     }
   }
 
-  const processComponent = (n1, n2, container, anchor) => {
+  const processComponent = (n1, n2, container, anchor, parentComponent) => {
 
     if (n1 == null) {
 
@@ -288,24 +290,24 @@ function baseCreateRenderer(
 
       } else {
         //组件的挂载
-        mountComponent(n2, container, anchor)
+        mountComponent(n2, container, anchor, parentComponent)
       }
     } else {
       //组件的更新
-      updateComponent(n1, n2, container, anchor)
+      updateComponent(n1, n2)
     }
   }
 
 
-  const processElement = (n1, n2, container, anchor) => {
+  const processElement = (n1, n2, container, anchor, parentComponent) => {
     if (n1 == null) {
       // 把n2转换为真实dom挂载到容器中
       console.log('把n2变为真实dom挂载到container')
-      mountElement(n2, container, anchor)
+      mountElement(n2, container, anchor, parentComponent)
     } else {
       // 更新
       console.log('元素更新')
-      patchElement(n1, n2, container)
+      patchElement(n1, n2, parentComponent)
     }
   }
 
@@ -325,7 +327,7 @@ function baseCreateRenderer(
   }
 
 
-  const processFragment = (n1, n2, container, anchor) => {
+  const processFragment = (n1, n2, container, anchor, parentComponent) => {
 
     const fragmentStartAnchor = n2.el = n1 ? n1.el : hostCreateText('')
     const fragmentEndAnchor = n2.anchor = n1 ? n1.anchor : hostCreateText('')
@@ -337,10 +339,10 @@ function baseCreateRenderer(
       hostInsert(fragmentStartAnchor, container, anchor)
       hostInsert(fragmentEndAnchor, container, anchor)
       //不存在旧节点，直接挂载
-      mountChildren(container, n2.children, fragmentEndAnchor)
+      mountChildren(container, n2.children, fragmentEndAnchor, parentComponent)
     } else {
       //存在旧节点
-      patchChildren(n1, n2, container, anchor)
+      patchChildren(n1, n2, container, fragmentEndAnchor, parentComponent)
     }
   }
 
@@ -424,7 +426,7 @@ function baseCreateRenderer(
    * @param children 
    * @param start 挂载开始的节点索引 
    */
-  const mountChildren = (container, children, anchor, start = 0) => {
+  const mountChildren = (container, children, anchor, parentComponent, start = 0) => {
     for (let i = start; i < children.length; i++) {
       const child = children[i] = normalizeVNode(children[i])
       patch(null, child, container, anchor)
@@ -436,7 +438,7 @@ function baseCreateRenderer(
    * @param vnode 挂载的虚拟DOM
    * @param container 
    */
-  const mountElement = (vnode: VNode, container: RendererElement, anchor: RendererNode) => {
+  const mountElement = (vnode: VNode, container: RendererElement, anchor: RendererNode, parentComponent) => {
     // vnode中的children永远只有两种情况：数组、字符串
     // 如果vnode的children是一个对象或vnode则要被h函数转化为数组
     // 所以children只有字符串和数组
@@ -452,7 +454,7 @@ function baseCreateRenderer(
 
       // children是数组
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(el, children, null)
+      mountChildren(el, children, null, parentComponent)
     }
 
     //添加props
@@ -478,18 +480,18 @@ function baseCreateRenderer(
 
 
   // 组件的挂载流程
-  const mountComponent = (initialVNode, container, anchor) => {
+  const mountComponent = (initialVNode, container, anchor, parentComponent) => {
 
     // 将组件的vnode渲染到容器中
     const componentOptions = initialVNode.type
 
-  
+
     const { beforeCreate, created } = componentOptions
     beforeCreate && beforeCreate()
     console.log('生命周期 beforeCreate 调用')
 
     // 1、给组件创造一个组件实例 
-    const instance = initialVNode.component = createComponentInstance(initialVNode)
+    const instance = initialVNode.component = createComponentInstance(initialVNode, parentComponent)
 
 
     //判断当前的组件是否是KeepAlive组件,如果是就注入内部方法
@@ -500,7 +502,7 @@ function baseCreateRenderer(
     // 2、给组件的实例进行赋值
     setupComponent(instance)
 
-    
+
     //创建实例之后
     created && created.call(instance.proxy)
     console.log('生命周期 created 调用')
@@ -512,7 +514,7 @@ function baseCreateRenderer(
 
 
 
-  const patchUnKeyedChildren = (c1, c2, container) => {
+  const patchUnKeyedChildren = (c1, c2, container, anchor, parentComponent) => {
     const oldLength = c1.length
     const newLength = c2.length
     //公共部分
@@ -531,7 +533,7 @@ function baseCreateRenderer(
       unmountChildren(c1, commonLength)
     } else {
       // 挂载新节点
-      mountChildren(container, null, commonLength)
+      mountChildren(container, anchor, parentComponent, commonLength)
     }
   }
 
@@ -1081,7 +1083,7 @@ function baseCreateRenderer(
   /**
    * 更新孩子
    */
-  const patchChildren = (n1, n2, el, anchor = null) => {
+  const patchChildren = (n1, n2, el, anchor, parentComponent) => {
     const c1 = n1.children // 新孩子
     const c2 = n2.children // 旧孩子
 
@@ -1125,7 +1127,7 @@ function baseCreateRenderer(
 
         //新孩子是数组挂载新孩子
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-          mountChildren(el, c2, anchor)
+          mountChildren(el, c2, anchor, parentComponent)
         }
 
       }
@@ -1161,6 +1163,7 @@ function baseCreateRenderer(
       //     unmountChildren(c1)
       //   }
       // }
+      
     }
   }
 
@@ -1192,7 +1195,7 @@ function baseCreateRenderer(
    * @param n2 
    * @param container 
    */
-  const patchElement = (n1, n2, container) => {
+  const patchElement = (n1, n2, parentComponent) => {
     //新node复用旧node的el
     let el = n2.el = n1.el
 
@@ -1201,7 +1204,8 @@ function baseCreateRenderer(
     //更新参数
     patchProps(props, newProps, el)
     //更新孩子
-    patchChildren(n1, n2, el)
+    //全量diff
+    patchChildren(n1, n2, el, null, parentComponent)
   }
 
 
@@ -1251,7 +1255,7 @@ function baseCreateRenderer(
    * @param n2 新vnode
    * @param container 挂载的容器
    */
-  const patch = (n1, n2, container, anchor = null) => {
+  const patch = (n1, n2, container, anchor = null, parentComponent = null) => {
     //如果新节点和老节点不相等,删除老节点 
     if (n1 && !isSameVNodeType(n1, n2)) {
       unmount(n1)
@@ -1273,19 +1277,18 @@ function baseCreateRenderer(
         break
       case Fragment:
         console.log("patch Fragment-------")
-        processFragment(n1, n2, container, anchor)
+        processFragment(n1, n2, container, anchor, parentComponent)
         break;
       default:
         if (shapeFlag & ShapeFlags.COMPONENT) { //如果当前是一个组件的vnode
           console.log('patch组件-------')
-          processComponent(n1, n2, container, anchor)
+          processComponent(n1, n2, container, anchor, parentComponent)
         } else if (shapeFlag & ShapeFlags.ELEMENT) {
           console.log('patch元素-------')
-          processElement(n1, n2, container, anchor)
+          processElement(n1, n2, container, anchor, parentComponent)
         } else if (shapeFlag & ShapeFlags.TELEPORT) {
           //传送门组件
-          debugger
-          ; (type as typeof TeleportImpl).process(n1, n2, container, anchor, internals)
+          ; (type as typeof TeleportImpl).process(n1, n2, container, anchor, parentComponent, internals)
         }
     }
   }

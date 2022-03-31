@@ -39,3 +39,4 @@ registerRuntimeCompiler(compileToFunction)
 export { compileToFunction as compile }
 
 export * from '@mini-vue3/runtime-dom'
+export * from '@mini-vue3/server-renderer'
