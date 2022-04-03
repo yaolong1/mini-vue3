@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代理是Set、Map对象</title>
+</head>
+
+<body>
+  <script src="../dist/runtime-dom.global.js"></script>
+  <script>
+    const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
+
+    // 数据污染
+    // const s = new Map
+    // let p1 = { a: 1 }
+    // s.set('key', p1)
+    // let data = reactive(s)
+    // effect(() => {
+    //   console.log(data.size)
+    // })
+
+
+    //forEach响应式
+    // const key = { k1: 1 }
+    // const value = new Set([1, 2, 3])
+
+    // const p = reactive(new Map([[key, value]]))
+
+    // effect(() => {
+    //   p.forEach((value, key) => {
+    //     console.log(value.size)
+    //   });
+    // })
+
+
+    //迭代器方法的响应式处理 entries、keys、value
+    // const set = new Set([1, 2, 3, 4])
+    // const map = new Map([['key', 1], ['key2', 2]])
+    // const p = reactive(map)
+
+    // effect(() => {
+    //   for (const i of p.entries()) {
+    //     console.log(i)
+    //   }
+
+    // })
+    // p.set('key3', 3)
+
+
+    const map = new Map([['key', 1], ['key2', 2]])
+    const p = reactive(map)
+
+    effect(() => {
+      for (const i of p.keys()) {
+        console.log(i)
+      }
+
+    })
+    p.set('key3', 3) //因为此时是针对key的依赖收集，当操作类型是SET时其实并没有减少map的数量，只是修改了值，但此时遍历的是key,SET操作是不影响的压根不需要更新
+
+  </script>
+</body>
+
+</html>

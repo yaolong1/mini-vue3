@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+
+  <script src="../dist/runtime-dom.global.js"></script>
+  <!-- <script src="http://unpkg.com/vue"></script> -->
+  <script>
+    // const { effect, reactive, ref, computed, watch } = Vue
+    const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
+
+    const flag = reactive({ value: true })
+    // const computedFlag = computed(() => flag.value)
+    // const data = reactive({ msg: '我是branch true' })
+
+    // effect(() => {
+    //   if (computedFlag.value) {
+    //     console.log(data.msg)
+    //   } else {
+    //     console.log('false branch')
+    //   }
+    // })
+
+
+
+
+
+    //无限循环测试
+    // const data = reactive({ counter: 1 })
+    // effect(() => {
+    //   data.counter++
+    //   console.log(data.counter)
+    // })
+
+
+    const data = reactive({ key1: NaN, key2: 'key2', key3: 'key3', test() { return 'x' } })
+    effect(() => {
+      for (const key in data) {
+        console.log(key)
+      }
+      console.log(data.test())
+    })
+    data.key1 = NaN
+
+    // data.key4 = 'key4' // 新增
+    // delete data.key4 // 删除
+    // data.key3 = 'key3-update' //修改
+
+    // data.test = () => 'y'
+
+  </script>
+</body>
+
+</html>

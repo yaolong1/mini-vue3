@@ -1,13 +1,13 @@
 import { isOn, isVoidTag, isArray, isString, isSSRSafeAttrName, isBooleanAttr, escapeHtml, includeBooleanAttr, isFunction, ShapeFlags } from '@mini-vue3/shared';
-import { VNode, ssrUtils, ComponentInternalInstance, Text, Comment, Fragment, normalizeVNode } from "mini-vue3";
+import { VNode, ssrUtils, ComponentInternalInstance, Text, Comment, Fragment } from "mini-vue3";
 
 const {
   setupComponent,
   renderComponentRoot,
   createComponentInstance,
-
+  isVNode,
+  normalizeVNode
 } = ssrUtils
-
 
 //将虚拟dom渲染成HTML字符
 function renderElementVNode(vnode: VNode, parentComponent): string {
@@ -139,7 +139,7 @@ function renderComponentSubTree(instance) {
  * 
  * @param vnode 
  */
-export function renderVNode(vnode: VNode, parentComponent) {
+export function renderVNode(vnode: VNode, parentComponent = null) {
   const { type, shapeFlag, children } = vnode
 
   //渲染完成的html字符

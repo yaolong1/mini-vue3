@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>服务端渲染模拟</title>
+</head>
+
+<body>
+
+  <div id="app"></div>
+  <script src="../dist/vue.global.js"></script>
+  <script>
+
+    const { h, renderToString, ref, hydrate } = MiniVue3
+
+    const counter = ref(1)
+    const click = () => {
+      counter.value++
+    }
+    const vnode = h('div', [h('h1', { style: 'color:red' }, '标题1'), h('span', { onClick: click }, `span--${counter.value}`), '文本'])
+
+    //模拟服务端渲染请求
+    const html = renderToString(vnode)
+    const app = document.querySelector('#app')
+    app.innerHTML = html //此时html是没有事件的
+
+    //激活html 即绑定事件
+    hydrate(vnode,app,null)
+
+  </script>
+</body>
+
+</html>

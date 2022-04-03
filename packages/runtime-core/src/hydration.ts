@@ -25,10 +25,10 @@ export function createHydrationFunctions(
     o: { patchProp, nextSibling, parentNode, remove, insert, createComment }
   } = rendererInternals
 
-  const hydrate = (vnode, container) => {
+  const hydrate = (vnode, container: Element) => {
 
     //如果container存在children
-    if (container.has)
+    if (container.hasChildNodes())
       hydrateNode(container.firstChild, vnode, null)
   }
 
@@ -119,12 +119,13 @@ export function createHydrationFunctions(
 
   //激活元素
   const hydrateElement = (node: Element, vnode: VNode, parentComponent: ComponentInternalInstance) => {
-
+    console.log('激活元素', node, vnode)
     return null
   }
 
   //激活Fragment
   const hydrateFragment = (node: Comment, vnode: VNode, parentComponent: ComponentInternalInstance) => {
+    console.log('激活Fragment')
 
     //TODO
     return null

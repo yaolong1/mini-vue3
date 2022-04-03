@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<style>
+  .btn {
+    border: 0;
+    outline: none;
+    background-color: transparent;
+    background-color: red;
+    color: white;
+    font-size: 18px;
+    height: 40px;
+    border-radius: 10px;
+    width: 150px;
+  }
+</style>
+
+<body>
+
+  <div id="app"></div>
+  <script src="../dist/runtime-dom.global.js"></script>
+  <!-- <script src="http://unpkg.com/vue"></script> -->
+  <script>
+    const { createApp, h, reactive, toRefs, ref, Fragment } = MiniVue3RuntimeDOM
+
+
+    const APP = {
+      props: {
+      },
+      setup(props, ctx) {
+        const flg = ref(true)
+        return {
+          change: () => {
+            flg.value = !flg.value
+          }, flg
+        }
+      },
+      render(proxy) {
+
+
+        const children1 = [
+          h('li', { key: 'a' }, 'a'),
+          h('li', { key: 'b' }, 'b'),
+          h('li', { key: 'c' }, 'c'),
+          h('li', { key: 'd' }, 'd'),
+          h('li', { key: 'e' }, 'e'),
+          h('li', { key: 'j' }, 'J'),
+          h('li', { key: 'f' }, 'f'),
+          h('li', { key: 'g' }, 'g'),
+        ]
+
+        const children2 = [
+          h('li', { key: 'a' }, 'a'),
+          h('li', { key: 'b' }, 'b'),
+          h('li', { key: 'e' }, 'e'),
+          h('li', { key: 'c' }, 'c'),
+          h('li', { key: 'd' }, 'd'),
+          h('li', { key: 'h' }, 'h'),
+          h('li', { key: 'f' }, 'f'),
+          h('li', { key: 'g' }, 'g'),
+        ]
+        const oldNode = h('ul', {}, [h('button', { class: 'btn', onclick: this.change }, '改变'), h(Fragment, {}, children1)])
+        const newNode = h('ul', {}, [h('button', { class: 'btn', onclick: this.change }, '改变'), h(Fragment, {}, children2)])
+
+
+        let vnode = this.flg ? oldNode : newNode
+
+        return vnode
+      }
+    }
+    const app = createApp(APP)
+    app.mount('#app')
+  </script>
+</body>
+
+</html>

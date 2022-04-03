@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>事件冒泡更新机制问题</title>
+</head>
+
+<body>
+
+  <div id="app"></div>
+
+  <!-- <script src="http://unpkg.com/vue"></script> -->
+  <!-- <script src="../dist/runtime-dom.global.js"></script> -->
+  <script src="G:\open-source-project\vue-next\packages\vue\dist\vue.global.js"></script>
+  <script>
+    // const { effect, reactive, ref, computed, watch, createApp, h } = MiniVue3RuntimeDOM
+    const { effect, reactive, ref, computed, watch, createApp, h } = Vue
+
+    const data = reactive({ value: false })
+    createApp({
+      render() {
+        //这里会出现事件冒泡与更新时机的问题。什么是事件冒泡？如果一个div存在一个事件,它的孩子标签也存在一个事件，当点击的时候就会先执行孩子标签的事件随后再执行父标签的事件，这就是事件冒泡
+
+        // 当点击p标签修改响应式数据data.value=true 时，居然div的点击事件也执行了，这不符合常理
+        // 按道理来说只执行p标签的点击事件，并不能导致div点击事件的执行。因为点击的时候div并没有事件
+        // 但是由于data是响应式的数据，data改变会导致再次执行render,而此时data.value=true,div已经绑定事件。
+        // 此时执行div标签执行只有一个原因：说明事件绑定发生在事件冒泡之前 《vue.js 设计与实现》 #201页
+
+        // 解决：屏蔽事件绑定时间晚于事件触发时间的事件处理函数
+        return h('div', { 
+                    onClick: data.value ? () => { console.log('父级div') } : {} 
+                        }, 
+                     h('p', { onClick: () => { data.value = true } }, 'p孩子标签')
+                )
+      }
+    }).mount('#app')
+  </script>
+</body>
+
+</html>

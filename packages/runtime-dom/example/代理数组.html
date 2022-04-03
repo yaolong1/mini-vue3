@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>代理数组</title>
+</head>
+
+<body>
+  <script src="../dist/runtime-dom.global.js"></script>
+  <script>
+    const { effect, reactive, ref, computed, watch } = MiniVue3RuntimeDOM
+
+    // for....in
+    // const data = reactive([0])
+    // effect(() => {
+    //   for (const key in data) { //会走 ownKeys 拦截
+    //     console.log(key)
+    //   }
+    // })
+    // data[2] = 10
+    // console.log(data)
+
+    // for....of
+    // const obj = {
+    //   val: 1,
+    //   [Symbol.iterator]() {
+    //     return {
+    //       next() {
+    //         return {
+    //           value: obj.val++,
+    //           done: obj.val > 10 ? true : false
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+    // for (const val of obj) {
+    //   console.log(val)
+    // }
+    // const arr = reactive([1, 2, 3, 4, 5])
+
+    // effect(() => {
+    //   for (const val of arr) {
+    //     console.log(val)
+    //   }
+    // })
+
+
+
+    //===================1.数组的查找方法：includes、lastIndexOf、indexOf===================
+
+    // 1.1查找响应式对象
+    // const obj = {}
+    // let arr = reactive([obj])
+    // console.log(arr.includes(arr[0])) 
+    /**
+     * includes内部会调用arr[index]和arr[0]作比较，当调用arr[index]时，
+     * 如果index == 0就会触发arr响应式对象的getter方法，因为arr[0]其实就是一个obj的响应式代理对象,当比较arr[index]是否等于arr[0]时会触发getter中逻辑
+     *     if (isObject(res)) { 
+              return isReadOnly ? readonly(res) : reactive(res)
+            }
+     * 以上逻辑在比较的时候会触发两次会创建两个不同的响应式代理对象。这样当用户调用arr.includes(arr[0])时就会找不到arr[0]，因为是两个不同的代理对象。
+     * 所以为了避免这对同一原对象创建了不同的响应式代理对象，我们在创建reactive时用一个map来保存原对象和响应式代理对象的依赖关系，
+     * 当我们创建响应式代理对象的时候就从map中查找当前的原对象是否已经创建过响应式代理对象,如果创建过就直接返回map中的响应式代理对象,没创建就走创建逻辑
+       const reactiveMap = new WeakMap()
+       function createReactiveObject(){
+          const existProxy = proxyMap.get(target)
+          if (existProxy) {
+            return existProxy
+          }
+          const proxy = new Proxy(target, baseHandlers)
+          //创建完响应式对象之后将其缓存起来
+          proxyMap.set(target, proxy)
+          return proxy
+       }
+     */
+
+
+
+    // 1.2查找原对象
+    // const obj = {}
+    // let arr = reactive([obj,2,3,4])
+    /**
+     * 通常情况下用户调用arr的includes查看obj是否存在于arr,在上诉例子中确实是存在的。但vue中确对其做了特殊的处理,
+     * 在没做处理之前，该结果一定为false。因为includes内部调用的是arr[index]和obj比较,arr[index]一定是一个响应式对象，而obj只是一个普通对象所以不相等
+     * 那么我们怎么判断？重写代理对象的includes方法对普通对象特殊处理一下
+       在什么地方重写？在getter方法中拦截includes方法即可
+       //重写的方法
+       const originMethod = Array.prototype.includes // 拿到原型上的方法
+       const arrayInstrumentations = {
+         includes: function(...args){
+              let res = originMethod.apply(this,args)
+              if(res === false){ //说明当前对象有可能是原对象也有可能是原对象
+                res = originMethod.apply(this[ReactiveFlags.RAW],args)
+              }
+              return res
+         }
+       }
+
+       //在createGetter中添加如下代码
+       function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获取
+          return function get(target, key, receiver) {
+            // 省略部分代码
+            // 如果当前的操作对象时数组，并且操作的属性是一个重写的方法,就走自定义的重写逻辑
+            if(isArray(target)&&arrayInstrumentations.hasOwnProperty(key)){
+              return Reflect.get(arrayInstrumentations,key,receiver)
+            }
+            
+          }
+        }
+     */
+
+    //indexOf lastIndexOf都是属于查找数组根据指定值返回指定结果的方法所以都是一样的
+    // console.log(arr.indexOf(obj))
+    // console.log(arr.lastIndexOf(obj))
+
+
+
+
+
+    // ===================2. 隐式的修改数组长度的原型方法===================
+    // const arr = reactive([0])
+    // effect(() => {
+    //   arr.push(1) // 内部会触发length访问操作和设置值的操作
+    // })
+
+    // effect(() => {
+    //   arr.push(2)
+    // })
+    /**
+     * shouldTrack = true //默认为true
+       const originMethod = Array.prototype.push // 拿到原型上的方法
+       const arrayInstrumentations = {
+         includes: function(...args){
+
+              shouldTrack = false //设置为false禁止track
+              let res = originMethod.apply(this,args)
+              shouldTrack = true // 允许track
+              return res
+         }
+       }
+     * 在track()函数中判断
+     * track(){
+     *    //禁止track直接退出
+     *    if(!shouldTrack && activeEffect !== undefined) return 
+     * }
+     */
+
+    // splice、pop、unshift、shift等操作都是属于隐式的修改数组长度的原型方法所以都需要做拦截处理，逻辑和push操作是一样的
+    // const arr = reactive([1, 2, 3])
+    // effect(() => {
+    //   arr.unshift(-1)
+    // })
+    // effect(() => {
+    //   arr.unshift(0)
+    // })
+
+  </script>
+</body>
+
+</html>
