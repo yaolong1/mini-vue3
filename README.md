@@ -10,7 +10,7 @@
 
 - 已实现：
   - ① reactivity: 响应式 APi computed ref toRefs toRef reactive effect readonly shallowReadonly shallowReactive
-  - ② runtime-dom: createApp Transition
+  - ② runtime-dom: createApp Transition render hydrate createSSRApp
   - ③ runtime-core: createRender (包含 diff 算法) watch KeepAlive Teleport AsyncComponent Emit slots scheduler 组件生命周期
   - ④ compiler-dom: parse compile
   - ⑤ template-explorer: 模板浏览器，可用于查看html模板生成的render函数
