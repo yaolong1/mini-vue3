@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <!-- <script src="../dist/vue.global.js"></script> -->
+  <script src="http://unpkg.com/vue"></script>
+  <script>
+    const { createApp, h, reactive, toRefs, ref } = Vue
+
+    function useCounter() {
+      const data = reactive({ counter: 1 })
+      const add = () => {
+        data.counter++
+        console.log('xxx')
+      }
+      return { add, ...toRefs(data) }
+
+    }
+
+    const APP = {
+      props: {
+        title: {
+          type: String
+        }
+      },
+      setup(props, ctx) {
+        const { add, counter } = useCounter()
+        const flag = ref(true)
+
+        function test() {
+          console.log(1)
+          debugger
+          flag.value = !flag.value
+        }
+        return {
+          add,
+          counter,
+          flag,
+          test
+        }
+      },
+      render(proxy) {
+
+        // sync form start
+        // const children1 = [
+        //   h('li', { key: 'a' }, 'a'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c' }, 'c'),
+        // ]
+        // const children2 = [
+        //   h('li', { key: 'a' }, 'a'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c' }, 'c'),
+        //   h('li', { key: 'd' }, 'd'),
+        //   h('li', { key: 'e' }, 'e'),
+        // ]
+
+        // sync from end 
+        // const children1 = [
+        //   h('li', { key: 'a' }, 'a'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c' }, 'c'),
+        // ]
+        // const children2 = [
+        //   h('li', { key: 'd' }, 'd'),
+        //   h('li', { key: 'e' }, 'e'),
+        //   h('li', { key: 'b' }, 'b'),
+        //   h('li', { key: 'c', style: { color: 'red' } }, 'c-new'),
+        // ]
+
+        //
+        const children1 = [
+          h('li', { key: 'a' }, 'a'),
+          h('li', { key: 'b' }, 'b'),
+          h('li', { key: 'c' }, 'c'),
+          h('li', { key: 'd' }, 'd'),
+          h('li', { key: 'e' }, 'e'),
+          h('li', { key: 'j' }, 'J'),
+          h('li', { key: 'f' }, 'f'),
+          h('li', { key: 'g' }, 'g'),
+        ]
+
+        const children2 = [
+          h('li', { key: 'a' }, 'a'),
+          h('li', { key: 'b' }, 'b'),
+          h('li', { key: 'e' }, 'e'),
+          h('li', { key: 'c' }, 'c'),
+          h('li', { key: 'd' }, 'd'),
+          h('li', { key: 'h' }, 'h'),
+          h('li', { key: 'f' }, 'f'),
+          h('li', { key: 'g' }, 'g'),
+        ]
+        const oldNode = h('h1', {}, [h('div', { onClick: this.test }, '1'), h('div', {}, '2')])
+        const newNode = h('h1', {}, [h('div', { onClick: this.test }, '1'), "children2"])
+
+
+        let vnode = this.flag ? oldNode : newNode
+
+        return vnode
+      }
+    }
+    const app = createApp(APP, { title: 'test', a: "10" })
+    app.mount('#app')
+  </script>
+</body>
+
+</html>

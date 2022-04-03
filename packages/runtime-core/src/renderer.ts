@@ -1326,9 +1326,13 @@ function baseCreateRenderer(
   }
 
   //创建客户端激活函数
-  const [hydrate, hydrateVNode] = createHydrationFns(
-    internals as RendererInternals<Node, Element>
-  )
+  let hydrate: ReturnType<typeof createHydrationFunctions>[0] | undefined
+  let hydrateVNode: ReturnType<typeof createHydrationFunctions>[1] | undefined
+  if (createHydrationFns) {
+    [hydrate, hydrateVNode] = createHydrationFns(
+      internals as RendererInternals<Node, Element>
+    )
+  }
 
   return {
     render,

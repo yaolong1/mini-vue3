@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>生命周期</title>
+</head>
+
+<body>
+
+  <div id="app"></div>
+
+  <script src="../dist/vue.global.js"></script>
+  <!-- <script src="http://unpkg.com/vue"></script> -->
+  <script>
+    const { h, createApp, onMounted, onBeforeMount } = MiniVue3
+
+    const Child = {
+      setup(props, { emit }) {
+
+
+        onMounted(() => {
+          console.log('Child onMounted 01')
+        })
+
+        onMounted(() => {
+          console.log('Child onMounted 02')
+        })
+
+        onBeforeMount(() => {
+          console.log('Child onBeforeMount 01')
+
+        })
+        onBeforeMount(() => {
+          console.log('Child onBeforeMount 02')
+        })
+
+        return () => h('div', '孩子1')
+      }
+    }
+
+
+    const App = {
+      setup() {
+        onMounted(() => {
+          console.log('App onMounted 01')
+        })
+
+        onMounted(() => {
+          console.log('App onMounted 02')
+        })
+
+        onBeforeMount(() => {
+          console.log('App onBeforeMount 01')
+
+        })
+        onBeforeMount(() => {
+          console.log('App onBeforeMount 02')
+
+        })
+
+        return {
+        }
+
+
+      },
+      render() {
+
+        return h('div', {}, h(Child, { onChange: (a, b) => { console.log(a, b) } }))
+      }
+    }
+
+    createApp(App).mount('#app')
+
+
+  </script>
+</body>
+
+</html>

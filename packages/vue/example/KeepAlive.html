@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeepAlive</title>
+</head>
+
+<body>
+
+  <div id="app"></div>
+
+  <script src="../dist/vue.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
+  <script>
+    // const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs, Fragment, KeepAlive, onBeforeMount } = Vue
+    const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs, Fragment, KeepAlive, onBeforeMount } = MiniVue3
+
+
+
+
+    const Child = {
+      name: 'child',
+      setup() {
+        onMounted(() => {
+          console.log('我被挂载完毕')
+        })
+        onBeforeMount(() => {
+          console.log('挂载之前')
+        })
+      },
+      render() {
+        return h(Fragment, [
+          h('header', this.$slots.header()),
+          h('body', this.$slots.body()),
+          h('footer', this.$slots.footer()),
+        ])
+      },
+    }
+
+
+    const Child2 = {
+      name: 'child2',
+      setup() {
+        onMounted(() => {
+          console.log('我被挂载完毕2')
+        })
+        onBeforeMount(() => {
+          console.log('挂载之前2')
+        })
+      },
+      render(props, ctx) {
+        console.log('ctx-', ctx)
+        return h(Fragment, [
+          h('header', this.$slots.header()),
+          h('body', this.$slots.body()),
+          h('footer', this.$slots.footer()),
+        ])
+      },
+    }
+
+
+    // const Child2 = (props, { slots }) => {
+
+    //   console.log('slot', slots)
+
+    //   return h(Fragment, [
+    //     h('header', slots.header()),
+    //     h('body', slots.body()),
+    //     h('footer', slots.footer())])
+    // }
+
+
+
+    const App = {
+      setup() {
+        const flag = ref(true)
+        return {
+          flg: flag,
+          onTest() {
+            flag.value = !flag.value
+          }
+        }
+      },
+      render() {
+        let _this = this
+        const f1 = h(Child, {}, {
+          header() {
+            return h('div', { onClick: _this.onTest }, '我是头部1')
+          },
+          body() {
+            return h('div', {}, '我是身体1')
+          },
+          footer() {
+            return h('div', {}, '我是尾部1')
+          },
+        })
+
+        const f2 = h(Child2, {}, {
+          header() {
+            return h('div', { onClick: _this.onTest }, '我是头部2')
+          },
+          body() {
+            return h('div', {}, '我是身体2')
+          },
+          footer() {
+            return h('div', {}, '我是尾部2')
+          },
+        })
+
+        // return this.flg ? f1 : f2
+        return h(KeepAlive, { exclude: 'child' }, this.flg ? f1 : f2)
+      },
+    }
+    createApp(App).mount('#app')
+
+  </script>
+</body>
+
+</html>

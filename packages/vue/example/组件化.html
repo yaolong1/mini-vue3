@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>组件化</title>
+</head>
+
+<body>
+
+  <div id="app"></div>
+
+  <script src="../dist/vue.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
+  <script>
+    const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs } = MiniVue3
+    const App = {
+      data() {
+        return {
+          counter: 1,
+          counter2: 2,
+        }
+      },
+      beforeCreate() {
+        console.log("我创建之前了")
+      },
+      mounted() {
+        // console.log('============mounted==============', this.counter)
+      },
+      updated() {
+        console.log('============updated==============', this.counter)
+      },
+      setup(props) {
+
+        onMounted(() => {
+          console.log('============Mounted==============')
+        })
+        return {}
+      },
+      render() {
+        return h('button', {
+          onClick: () => {
+            this.counter++;
+            this.counter2++
+          }
+        }, `${this.counter} + ${this.counter2}`)
+      },
+    }
+    createApp(App).mount('#app')
+
+
+
+  </script>
+</body>
+
+</html>
