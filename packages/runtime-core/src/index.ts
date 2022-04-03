@@ -2,7 +2,7 @@ export { isKeepAlive } from './renderer'
 
 export * from '@mini-vue3/reactivity'
 
-export { createRenderer } from './renderer'
+export { createRenderer, createHydrationRenderer } from './renderer'
 export { defineAsyncComponent } from './apiAsyncComponent'
 export { defineComponent } from './apiDefineComponent'
 

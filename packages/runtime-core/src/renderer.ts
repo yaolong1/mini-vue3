@@ -11,6 +11,7 @@ import { renderComponentRoot, shouldUpdateComponent } from './componentRenderUti
 import { resolveProps } from './componentProps';
 import { updateSlots } from './componentSlots';
 import { TeleportImpl } from './components/Teleport';
+import { createHydrationFunctions } from './hydration';
 
 export interface RendererNode {
   [key: string]: any
@@ -26,7 +27,7 @@ type MoveFn = (
 ) => void
 
 type PatchFn = (
-  n1: VNode | null, // null means this is a mount
+  n1: VNode | null,
   n2: VNode,
   container: RendererElement,
   anchor?: RendererNode | null,
@@ -65,14 +66,14 @@ export type MountComponentFn = (
   rootComponent: ComponentInternalInstance | null,
 ) => void
 
-export interface RendererInternals {
+export interface RendererInternals<HostNode = RendererNode, HostElement = RendererElement> {
   p: PatchFn
   um: UnmountFn
   m: MoveFn
   mt: MountComponentFn
   mc: MountChildrenFn
   pc: PatchChildrenFn
-  o: RendererOptions
+  o: RendererOptions<HostNode, HostElement>
 }
 
 
@@ -115,15 +116,30 @@ export function createRenderer<
   return baseCreateRenderer<HostNode, HostElement>(renderOptions)
 }
 
+
+/**
+ * 创建一个客户端激活服务端HTML字符串的渲染器
+ * @param renderOptions // 第三方平台的api选项 
+ * @returns {render,createApp()}
+ */
+export function createHydrationRenderer(renderOptions: RendererOptions<Node, Element>) {
+  return baseCreateRenderer(renderOptions, createHydrationFunctions)
+}
+
+
 //base
 function baseCreateRenderer<
   HostNode = RendererNode,
   HostElement = RendererElement
->(renderOptions: RendererOptions<HostNode, HostElement>)
+>(
+  renderOptions: RendererOptions<HostNode, HostElement>,
+  createHydrationFns?: typeof createHydrationFunctions
+)
 
 // implementation
 function baseCreateRenderer(
   renderOptions: RendererOptions,
+  createHydrationFns?: typeof createHydrationFunctions
 ): any {
   //第三方平台的APi
   const {
@@ -1163,7 +1179,7 @@ function baseCreateRenderer(
       //     unmountChildren(c1)
       //   }
       // }
-      
+
     }
   }
 
@@ -1309,9 +1325,15 @@ function baseCreateRenderer(
     o: renderOptions
   }
 
+  //创建客户端激活函数
+  const [hydrate, hydrateVNode] = createHydrationFns(
+    internals as RendererInternals<Node, Element>
+  )
+
   return {
-    createApp: createAppAPI(render),
-    render
-  }
+    render,
+    hydrate,
+    createApp: createAppAPI(render, hydrate),
+  } as const
 
 }
