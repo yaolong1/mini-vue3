@@ -16,8 +16,8 @@
   - ⑤ template-explorer: 模板浏览器，可用于查看html模板生成的render函数
   - ⑥ compiler-core baseParse baseCompile vBind vOn transformElement transformText transformExpression
   - ⑦ vue 全局模块，统一导出miniVue3供外部使用 支持global引入和esModule方式引入
+  - ① server-renderer 服务端渲染 renderVNode renderToString
 - 未实现
-  - ① server-renderer 服务端渲染
   - ② compiler-sfc 单文件组件
 #### 使用说明
 

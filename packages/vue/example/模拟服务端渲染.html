@@ -14,21 +14,39 @@
   <script src="../dist/vue.global.js"></script>
   <script>
 
-    const { h, renderToString, ref, hydrate } = MiniVue3
+    const { h, renderToString, ref, hydrate, effect, createSSRApp } = MiniVue3
 
-    const counter = ref(1)
-    const click = () => {
-      counter.value++
+    const SSRApp = {
+      name: 'ssrApp',
+      setup() {
+        const counter = ref(1)
+        const click = () => {
+          console.log(111111)
+          counter.value++
+        }
+        return {
+          counter,
+          click
+        }
+      },
+      render() {
+        return h('div', [h('h1', { style: 'color:red' }, '标题1'), h('span', { onClick: this.click }, `span--${this.counter}`), '文本'])
+      }
     }
-    const vnode = h('div', [h('h1', { style: 'color:red' }, '标题1'), h('span', { onClick: click }, `span--${counter.value}`), '文本'])
+    const ssrApp = createSSRApp(SSRApp)
 
-    //模拟服务端渲染请求
-    const html = renderToString(vnode)
+    //1、模拟客户端请求服务器得到HTML字符串，并将字符渲染到页面
+    const html = renderToString(ssrApp)
     const app = document.querySelector('#app')
     app.innerHTML = html //此时html是没有事件的
 
-    //激活html 即绑定事件
-    hydrate(vnode,app,null)
+
+
+
+    //当浏览器渲染完毕后，激活html
+    ssrApp.mount('#app')
+
+
 
   </script>
 </body>

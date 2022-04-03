@@ -31,6 +31,7 @@ type PatchFn = (
   n2: VNode,
   container: RendererElement,
   anchor?: RendererNode | null,
+  parentComponent?: ComponentInternalInstance | null,
 ) => void
 
 type MountChildrenFn = (
@@ -184,7 +185,13 @@ function baseCreateRenderer(
           invokeArrayFns(bm)
         }
         beforeMount && beforeMount.call(proxy) // beforeMount钩子
-        patch(null, subTree, container, anchor, instance)
+
+        if (initialVNode.el) {
+          //如果有真实dom说明当客户端需要激活
+          hydrateVNode(initialVNode.el, subTree, instance)
+        } else {
+          patch(null, subTree, container, anchor, instance)
+        }
         initialVNode.el = subTree.el
         instance.isMounted = true
 

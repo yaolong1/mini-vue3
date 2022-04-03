@@ -12,6 +12,10 @@ export function createAppAPI(render, hydrate?) {
 
     let isMounted = false
     const app = {
+      _component: rootComponent,
+      _props: rootProps,
+      _context: null,  //TODO
+      _container: null,
       mount(container, isHydrate?: boolean,) {
         if (!isMounted) {
 
@@ -28,6 +32,8 @@ export function createAppAPI(render, hydrate?) {
             render(vnode, container)
           }
 
+          isMounted = true
+          app._container = container
         }
 
       },

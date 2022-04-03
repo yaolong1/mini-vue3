@@ -93,7 +93,7 @@ function renderDynamicAttr(key, value) {
 
 
 //将组件渲染成html字符串
-function renderComponentVNode(vnode: VNode, parentComponent: ComponentInternalInstance) {
+export function renderComponentVNode(vnode: VNode, parentComponent: ComponentInternalInstance = null) {
   //初始化组件实例
   const instance = createComponentInstance(vnode, parentComponent)
 
