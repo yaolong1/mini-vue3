@@ -145,6 +145,38 @@ function createSetupContext(instance) {
 }
 
 
+
+//导出当前setup是否是在ssr状态下
+export let isInSSRComponentSetup = false
+
+
+export function setupComponent(instance, isSSR = false) {
+
+  //在执行setup之前设置当前的组件是否是ssr状态,默认是false
+  isInSSRComponentSetup = isSSR
+
+  //是否是有状态的组件
+  const isStateful = isStatefulComponent(instance)
+
+  // 组件的虚拟节点
+  const { props, children } = instance.vnode
+  // 组件的props初始化、 attrs初始化、data初始化
+  initProps(instance, props, isStateful, isSSR)
+  // 插槽初始化
+  initSlots(instance, children)
+
+  // 如果是普通组件就初始化setup
+  const setupResult = isStateful
+    ? setupStatefulComponent(instance, isSSR)
+    : undefined
+
+  //setup执行完毕后将组件setup状态设置为false
+  isInSSRComponentSetup = false
+  return setupResult
+}
+
+
+
 /**
  * 这个方法的作用就是调用setup函数,拿到返回值 赋值给instance.setupState 或者是赋值instance.render
  * setup有可能返回 h(),也有可能返回一个{}
@@ -237,34 +269,7 @@ function finishComponentSetup(instance, isSSR) {
   }
 }
 
-//导出当前setup是否是在ssr状态下
-export let isInSSRComponentSetup = false
 
-
-export function setupComponent(instance, isSSR = false) {
-
-  //在执行setup之前设置当前的组件是否是ssr状态,默认是false
-  isInSSRComponentSetup = isSSR
-
-  //是否是有状态的组件
-  const isStateful = isStatefulComponent(instance)
-
-  // 组件的虚拟节点
-  const { props, children } = instance.vnode
-  // 组件的props初始化、 attrs初始化、data初始化
-  initProps(instance, props, isStateful, isSSR)
-  // 插槽初始化
-  initSlots(instance, children)
-
-  // 如果是普通组件就初始化setup
-  const setupResult = isStateful
-    ? setupStatefulComponent(instance, isSSR)
-    : undefined
-
-  //setup执行完毕后将组件setup状态设置为false
-  isInSSRComponentSetup = false
-  return setupResult
-}
 
 
 //获取组件名称

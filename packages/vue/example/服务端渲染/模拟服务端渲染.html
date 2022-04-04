@@ -11,7 +11,7 @@
 <body>
 
   <div id="app"></div>
-  <script src="../dist/vue.global.js"></script>
+  <script src="../../dist/vue.global.js"></script>
   <script>
 
     const { h, renderToString, ref, hydrate, effect, createSSRApp } = MiniVue3
@@ -36,9 +36,13 @@
     const ssrApp = createSSRApp(SSRApp)
 
     //1、模拟客户端请求服务器得到HTML字符串，并将字符渲染到页面
-    const html = renderToString(ssrApp)
-    const app = document.querySelector('#app')
-    app.innerHTML = html //此时html是没有事件的
+    const html =  renderToString(ssrApp)
+    
+    html.then(html =>{
+      const app = document.querySelector('#app')
+      app.innerHTML = html //此时html是没有事件的
+    })
+
 
 
 

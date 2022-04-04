@@ -1,4 +1,4 @@
-import { isOn, isVoidTag, isArray, isString, isSSRSafeAttrName, isBooleanAttr, escapeHtml, includeBooleanAttr, isFunction, ShapeFlags } from '@mini-vue3/shared';
+import { isOn, isPromise, isVoidTag, isArray, isString, isSSRSafeAttrName, isBooleanAttr, escapeHtml, includeBooleanAttr, isFunction, ShapeFlags } from '@mini-vue3/shared';
 import { VNode, ssrUtils, ComponentInternalInstance, Text, Comment, Fragment } from "mini-vue3";
 
 const {
@@ -93,12 +93,18 @@ function renderDynamicAttr(key, value) {
 
 
 //将组件渲染成html字符串
-export function renderComponentVNode(vnode: VNode, parentComponent: ComponentInternalInstance = null) {
+export function renderComponentVNode(
+  vnode: VNode,
+  parentComponent: ComponentInternalInstance = null
+): string | Promise<string> {
   //初始化组件实例
   const instance = createComponentInstance(vnode, parentComponent)
 
-  setupComponent(instance, true /*isSSR*/)
-
+  const res = setupComponent(instance, true /*isSSR*/)
+  const hasAsyncSetup = isPromise(res)
+  if (hasAsyncSetup) {
+    return res.then(() => renderComponentSubTree(instance))
+  }
   //将subTree渲染
   return renderComponentSubTree(instance)
 }
