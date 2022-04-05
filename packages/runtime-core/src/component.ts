@@ -84,6 +84,7 @@ export interface ComponentInternalInstance {
   emit: Function, // 事件的触发
   exposed: Object, // 暴露的方法
   isMounted: boolean, // 是否被挂载完成
+  inheritAttrs: boolean, //是否使得子元素继承attrs
   bm: Function[] | null,//beforeMounted
   m: Function[] | null,//mounted
   bu: Function[] | null,//beforeUpdate
@@ -104,6 +105,7 @@ export function createComponentInstance(vnode, parent) {
     attrs: {}, // 除了props中的属性 //没定义的叫attrs
     slots: {}, // 组件的插槽
     next: null,
+    inheritAttrs: type.inheritAttrs, //是否让孩子节点继承attrs
     parent,
     data, //data响应式对象
     update: () => { },//当前实例的effectRunner

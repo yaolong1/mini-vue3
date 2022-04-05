@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>组件参数继承</title>
+</head>
+<style>
+  .test {
+    background-color: aquamarine;
+  }
+</style>
+
+<body>
+  <div id="app"></div>
+
+  <script src="../dist/vue.global.js"></script>
+  <script src="http://unpkg.com/vue"></script>
+  <script>
+    // const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs, Fragment } = Vue
+    const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs, Fragment, KeepAlive } = MiniVue3
+
+
+
+    const App = {
+      name: 'APP',
+      props: {
+        foo: {
+          type: String,
+          default: 'foo2'
+        }
+      },
+      setup(props, { emit }) {
+        return () => h('div', { class: 'test', id: props.foo }, 'AAAA');
+      }
+
+    };
+    const App2 = (props, { emit }) => {
+      console.log(props)
+      return h('div', { class: 'test', id: props.foo }, 'AAAA');
+    };
+
+    createApp(App2, { bar: 'bar', foo: 'foo', onClick: (val) => { console.log('我改变了') } }).mount('#app');
+
+  </script>
+</body>
+
+</html>

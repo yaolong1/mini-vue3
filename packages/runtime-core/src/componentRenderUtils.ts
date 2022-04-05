@@ -1,5 +1,6 @@
 import { normalizeVNode } from './vnode';
-import { ShapeFlags } from '@mini-vue3/shared';
+import { isOn, ShapeFlags } from '@mini-vue3/shared';
+import { Data } from './component';
 
 export function shouldUpdateComponent(preVNode, nextVNode) {
   const { props: preProps } = preVNode
@@ -58,6 +59,7 @@ export function hasPropsChanged(preProps, nextProps) {
  */
 export function renderComponentRoot(instance) {
   let result
+  let fallthroughAttrs //继承的的attrs
   const {
     type: Component,
     vnode,
@@ -69,7 +71,8 @@ export function renderComponentRoot(instance) {
     ctx,
     attrs,
     emit,
-    slots
+    slots,
+    inheritAttrs //是否使得子元素继承attrs
   } = instance
 
   //如果是普通的状态组件
@@ -84,6 +87,9 @@ export function renderComponentRoot(instance) {
         data,
         ctx)
     )
+
+    //直接取attrs
+    fallthroughAttrs = attrs
   } else {
     //函数式组件
     //返回的函数render
@@ -93,6 +99,32 @@ export function renderComponentRoot(instance) {
       render.length > 1 ?
         render(props, { attrs, slots, emit }) : render(props, null)
     )
+
+    //函数式组件,需要特殊处理，因为在initPros时options props
+    fallthroughAttrs = Component.props ? attrs : getFunctionalFallthrough(attrs)
   }
+
+
+  //如果组件选项设置了inheritAttrs!=false即允许属性继承
+  if (fallthroughAttrs && inheritAttrs !== false) {
+    //子节点合并attrs
+    result.props = {
+      ...result.props,
+      ...fallthroughAttrs
+    }
+  }
+
+
+
   return result
+}
+
+const getFunctionalFallthrough = (attrs: Data): Data | undefined => {
+  let res: Data | undefined
+  for (const key in attrs) {
+    if (key === 'class' || key === 'style' || isOn(key)) {
+      ; (res || (res = {}))[key] = attrs[key]
+    }
+  }
+  return res
 }

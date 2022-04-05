@@ -7,7 +7,7 @@ import { camelize, toHandlerKey } from "@mini-vue3/shared"
  * @param instance 组件实例
  */
 export function emit(instance, event: string, ...args) {
-  const props = instance.props
+  const props = instance.vnode.props
 
   //转换为指定格式on开头的驼峰命名
   const evenName = toHandlerKey(camelize(event))
