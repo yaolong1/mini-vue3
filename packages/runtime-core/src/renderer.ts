@@ -52,6 +52,7 @@ type PatchChildrenFn = (
 
 type UnmountFn = (
   vnode: VNode,
+  parentComponent: ComponentInternalInstance,
 ) => void
 
 
@@ -64,7 +65,7 @@ export type MountComponentFn = (
   initialVNode: VNode,
   container: RendererElement,
   anchor: RendererNode | null,
-  rootComponent: ComponentInternalInstance | null,
+  parentComponent: ComponentInternalInstance | null,
 ) => void
 
 export interface RendererInternals<HostNode = RendererNode, HostElement = RendererElement> {
@@ -305,7 +306,7 @@ function baseCreateRenderer(
 
       if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
         //如果当前组件是被缓存的组件就激活
-        (n2!.keepAliveInstance.ctx as KeepAliveContext).activate(
+        (parentComponent.ctx as KeepAliveContext).activate(
           n2,
           container,
           anchor,
@@ -388,20 +389,19 @@ function baseCreateRenderer(
    * @param children 
    * @param start 卸载的开始节点默认第一个
    */
-  const unmountChildren = (children, start = 0) => {
+  const unmountChildren = (children, parentComponent, start = 0) => {
     for (let i = start; i < children.length; i++) {
-      unmount(children[i])
+      unmount(children[i], parentComponent)
     }
   }
 
   // 卸载元素
-  const unmount = (vnode: VNode) => {
+  const unmount = (vnode: VNode, parentComponent) => {
 
     const {
       el,
       type,
       shapeFlag,
-      keepAliveInstance,
       component,
       children,
       transition } = vnode
@@ -409,7 +409,7 @@ function baseCreateRenderer(
 
     //如果是碎片就卸载它的孩子节点
     if (type === Fragment) {
-      children.forEach((v) => unmount(v))
+      children.forEach((v) => unmount(v, parentComponent))
     }
 
 
@@ -417,7 +417,8 @@ function baseCreateRenderer(
 
       //判断vnode是否应该keepAlive，如果是就不需要卸载,直接让其无效
       if (shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE) {
-        (keepAliveInstance.ctx as KeepAliveContext).deactivate(vnode)
+     
+        (parentComponent.ctx as KeepAliveContext).deactivate(vnode)
         return
       }
 
@@ -427,7 +428,7 @@ function baseCreateRenderer(
       bum && invokeArrayFns(bum)
 
       //卸载组件本质上是卸载subTree
-      unmount(subTree)
+      unmount(subTree, parentComponent)
       //卸载组件之后
       um && invokeArrayFns(um)
       return
@@ -568,7 +569,7 @@ function baseCreateRenderer(
    * @param c2 新的children
    * @param container
    */
-  const patchKeyedChildren = (c1, c2, container, parentAnchor) => {
+  const patchKeyedChildren = (c1, c2, container, parentAnchor, parentComponent) => {
     let e1 = c1.length - 1 //c1最大的索引值
     let e2 = c2.length - 1 //c2最大的索引值
     let i = 0 //从头开始比
@@ -686,7 +687,7 @@ function baseCreateRenderer(
       //===========common sequence unmount==============
     } else if (i > e2) { //有删除元素
       while (i <= e1) {  //删除 i到e1之间的元素
-        unmount(c1[i])
+        unmount(c1[i], parentComponent)
         i++
       }
     } else {
@@ -762,10 +763,10 @@ function baseCreateRenderer(
 
             patched++ //记录当前更新个数
           } else {  //需要删除老的
-            unmount(prevChild)
+            unmount(prevChild, parentComponent)
           }
         } else {
-          unmount(prevChild)
+          unmount(prevChild, parentComponent)
         }
       }
 
@@ -819,7 +820,7 @@ function baseCreateRenderer(
    * @param container 
    * @param parentAnchor 
    */
-  const patchSimpleKeyedChild = (c1, c2, container, parentAnchor) => {
+  const patchSimpleKeyedChild = (c1, c2, container, parentAnchor, parentComponent) => {
     console.log(c1, c2)
     const newChildren = c2
     const oldChildren = c1
@@ -880,7 +881,7 @@ function baseCreateRenderer(
       const has = newChildren.find(newNode => isSameVNodeType(newNode, oldNode))
       if (!has) {
         //没有找到删除老的节点
-        unmount(oldNode)
+        unmount(oldNode, parentComponent)
       }
     }
 
@@ -894,7 +895,7 @@ function baseCreateRenderer(
    * @param container 
    * @param parentAnchor 
    */
-  const patchDoubleSideKeyedChild = (c1, c2, container, parentAnchor) => {
+  const patchDoubleSideKeyedChild = (c1, c2, container, parentAnchor, parentComponent) => {
     let newStartIndex = 0; // 新节点开始索引
     let oldStartIndex = 0; // 老节点开始索引
     let newEndIndex = c2.length - 1; // 新节点结束索引
@@ -1008,7 +1009,7 @@ function baseCreateRenderer(
     } else if (newEndIndex < newStartIndex && oldStartIndex <= oldEndIndex) {
       //c1中多余节点卸载
       for (let i = oldStartIndex; i <= oldEndIndex; i++) {
-        unmount(c1[i])
+        unmount(c1[i], parentComponent)
       }
     }
   }
@@ -1118,7 +1119,7 @@ function baseCreateRenderer(
       // 旧孩子是数组
       if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
         //卸载旧孩子
-        unmountChildren(c1)
+        unmountChildren(c1, parentComponent)
       }
 
       // 旧孩子是文本、是数组一起处理， 因为textContent直接覆盖为新文本
@@ -1131,7 +1132,7 @@ function baseCreateRenderer(
         // 新孩子是数组
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           //快速diff
-          patchKeyedChildren(c1, c2, el, anchor)
+          patchKeyedChildren(c1, c2, el, anchor, parentComponent)
 
           //简单diff
           // patchSimpleKeyedChild(c1, c2, el, anchor)
@@ -1140,7 +1141,7 @@ function baseCreateRenderer(
           // patchDoubleSideKeyedChild(c1, c2, el, anchor)
         } else {
           //卸载旧孩子
-          unmountChildren(c1)
+          unmountChildren(c1, parentComponent)
         }
       } else {
         //旧孩子是文本 清空旧孩子
@@ -1281,7 +1282,7 @@ function baseCreateRenderer(
   const patch = (n1, n2, container, anchor = null, parentComponent = null) => {
     //如果新节点和老节点不相等,删除老节点 
     if (n1 && !isSameVNodeType(n1, n2)) {
-      unmount(n1)
+      unmount(n1, parentComponent)
       n1 = null
     }
 
