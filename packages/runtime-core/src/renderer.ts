@@ -452,7 +452,7 @@ function baseCreateRenderer(
   const mountChildren = (container, children, anchor, parentComponent, start = 0) => {
     for (let i = start; i < children.length; i++) {
       const child = children[i] = normalizeVNode(children[i])
-      patch(null, child, container, anchor)
+      patch(null, child, container, anchor, parentComponent)
     }
   }
 

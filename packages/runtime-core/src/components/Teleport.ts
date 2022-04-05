@@ -39,17 +39,17 @@ export const TeleportImpl = {
 
     if (!n1) {
       //如果n1是空，说明是第一次执行，直接将children 挂载到target上
-      const { props: { to, disabled }, children, shapeFlag } = n2
-      // insert anchors in the main view
-      const placeholder = (n2.el = createText('teleport start'))
-      const mainAnchor = (n2.anchor = createText('teleport end'))
+      const { props: { disabled }, children, shapeFlag } = n2
+
+      const placeholder = (n2.el = createText(' teleport start '))
+      const mainAnchor = (n2.anchor = createText(' teleport end '))
 
       insert(placeholder, container, anchor)
       insert(mainAnchor, container, anchor)
 
       //获取传送的目标容器
       const target = (n2.target = resolveTarget(n2.props, querySelector))
-      const targetAnchor = (n2.targetAnchor = createText('targetAnchor'))
+      const targetAnchor = (n2.targetAnchor = createText(' targetAnchor'))
 
       if (target) {
         insert(targetAnchor, target)

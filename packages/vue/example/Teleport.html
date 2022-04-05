@@ -18,7 +18,7 @@
     // const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs, Fragment } = Vue
     const { effect, reactive, ref, computed, watch, createApp, h, onMounted, proxyRefs, Fragment, Teleport } = MiniVue3
 
-    const Teleport1 = h(Teleport, { to: '#test1', disabled: false }, h('div', { style: { color: 'red' } }, 'Teleport content'))
+    const Teleport1 = h(Teleport, { to: '#test1', disabled: true }, h('div', { style: { color: 'red' } }, 'Teleport content'))
 
     const App = {
       render() {

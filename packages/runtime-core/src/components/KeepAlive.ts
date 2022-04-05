@@ -60,9 +60,10 @@ export const KeepAliveImpl = {
     const { renderer: { m: move, o: { createElement }
     } } = sharedContext
 
-    //创建一个隐藏的容器用来存储‘卸载’了的组件
 
+    //创建一个隐藏的容器用来存储‘卸载’了的组件
     const storageContainer = createElement('div')
+
 
     //KeepAlive组件实例上会被添加两个内部的函数，分别是_deActivate 和 _activate
     //这两个函数会在渲染器中调用
@@ -89,15 +90,12 @@ export const KeepAliveImpl = {
       if (children.length > 1) {
         current = null
         return children
-      } else if (!isVNode(rawVNode) || (!(rawVNode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) && !(rawVNode.shapeFlag & ShapeFlags.SUSPENSE))) {
+      } else if (!isVNode(rawVNode) || (!(rawVNode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) /**&& !(rawVNode.shapeFlag & ShapeFlags.SUSPENSE)**/)) {
         //如果不是组件直接渲染即可，因为非组件的虚拟节点无法被keepAlive
-        //函数式组件和普通非组件元素的虚拟节点无法被keepAlive
+        //元素的虚拟节点无法被keepAlive
         current = null
         return rawVNode
       }
-
-
-
 
 
 
@@ -111,6 +109,7 @@ export const KeepAliveImpl = {
       //处理include、exclude属性
       //如果include中的值和当前vnode Name匹配说明需要keepAlive
       //如果exclude中的值和当前vnode Name匹配说明不需要keepAlive
+      //name不存在不需要keepAlive
       if (
         (include && (!name || !matches(include, name))) ||
         (exclude && name && matches(exclude, name))
