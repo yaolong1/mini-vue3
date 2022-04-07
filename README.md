@@ -8,7 +8,7 @@
 
 迷你版 vue3 (带详细注释),采用和vue3源码相同的monorepo前端项目管理，源码结构、函数名和vue3基本一致
 
-### 核心功能
+#### 核心功能
 - reactivity
     - [x] reactive 只支持普通对象和Map、Set对象的响应式代理
     - [x] shallowReactive
