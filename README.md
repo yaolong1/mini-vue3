@@ -8,17 +8,76 @@
 
 迷你版 vue3 (带详细注释),采用和vue3源码相同的monorepo前端项目管理，源码结构、函数名和vue3基本一致
 
-- 已实现：
-  - ① reactivity: 响应式 APi computed ref toRefs toRef reactive effect readonly shallowReadonly shallowReactive
-  - ② runtime-dom: createApp Transition render hydrate createSSRApp
-  - ③ runtime-core: createRender (包含 diff 算法) watch KeepAlive Teleport AsyncComponent Emit slots scheduler 组件生命周期
-  - ④ compiler-dom: parse compile
-  - ⑤ template-explorer: 模板浏览器，可用于查看html模板生成的render函数
-  - ⑥ compiler-core baseParse baseCompile vBind vOn transformElement transformText transformExpression
-  - ⑦ vue 全局模块，统一导出miniVue3供外部使用 支持global引入和esModule方式引入
-  - ① server-renderer 服务端渲染 renderVNode renderToString
-- 未实现
-  - ② compiler-sfc 单文件组件
+### 核心功能
+- reactivity
+    - [x] reactive 只支持普通对象和Map、Set对象的响应式代理
+    - [x] shallowReactive
+    - [x] readonly
+    - [x] shallowRedonly
+    - [x] ref
+    - [x] shallowRef
+    - [x] unref
+    - [x] proxyRefs
+    - [x] toRef
+    - [x] toRefs
+    - [x] effect
+    - [x] ReactiveEffect
+    - [x] computed
+- runtime-core
+    - [x] KeepAlive组件
+    - [x] Teleport组件
+    - [x] defineAsyncComponent
+    - [x] defineComponent
+    - [x] createAppAPI
+    - [x] onBeforeMount
+    - [x] onMounted
+    - [x] onBeforeUpdate
+    - [x] onUpdated
+    - [x] onBeforeUnmount
+    - [x] onUnmounted
+    - [x] watch
+    - [x] patch
+    - [x] emit
+    - [x] slots
+    - [x] h
+    - [x] scheduler调度器
+    - [x] createVNode
+    - [x] createRenderer
+- runtime-dom
+    - [x] createApp
+    - [x] createSSRApp
+    - [x] Transition 组件
+    - [x] ensureRenderer
+    - [x] ensureHydrationRenderer
+    - [x] render
+    - [x] hydrate
+ - compiler-core
+    - [x] baseParse
+    - [x] baseCompile
+    - [x] codegen
+    - [x] transform
+    - [x] transformElement
+    - [x] transformText
+    - [x] transformExpression
+    - [x] transformBind
+    - [x] transformOn
+    - [ ] transformIf
+    - [ ] transformFor
+- compiler-dom
+    - [x] parse
+    - [x] compile
+- template-explorer
+    - [x] 支持编译生成render函数代码预览
+- shared
+    - [x] 基本的通用工具函数和枚举
+- vue 
+    - [x] compile 返回一个render函数
+    - [x] 全局统一导出miniVue3供外部使用，目前只支持global引入和esModule方式引入
+- server-renderer
+    - [x] renderToString
+    - [x] renderVNode
+- compiler-sfc
+    - [ ] 未完成
 #### 使用说明
 
 1. 安装依赖
