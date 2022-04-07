@@ -13,7 +13,7 @@
     - [x] reactive 只支持普通对象和Map、Set对象的响应式代理
     - [x] shallowReactive
     - [x] readonly
-    - [x] shallowRedonly
+    - [x] shallowReadonly
     - [x] ref
     - [x] shallowRef
     - [x] unref
