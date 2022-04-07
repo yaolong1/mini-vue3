@@ -28,7 +28,7 @@ export function toTypeString(value) {
 const onRE = /^on[^a-z]/
 export const isOn = (key: string) => onRE.test(key)
 
-
+export const NOOP = () => {}
 
 const cacheStringFunction = <T extends (str: string) => string>(fn: T): T => {
   const cache: Record<string, string> = Object.create(null)

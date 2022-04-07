@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>optionsApi支持</title>
+</head>
+<body>
+
+  <div id="app"></div>
+
+  <script src="../dist/vue.global.js"></script>
+  <script>
+    const {h,createApp} = MiniVue3
+    const App = {
+      data:{
+        counter: 1
+      },
+      beforeCreate() {
+        console.log('lifeCycle-----beforeCreate')
+        console.log('lifeCycle-----beforeCreate --->this = ',this)
+      },
+      created() {
+        console.log('lifeCycle-----created')
+        console.log('lifeCycle-----created --->this = ',this)
+      },
+      mounted() {
+        console.log('lifeCycle-----mounted')
+        console.log('lifeCycle-----mounted --->this = ',this)
+      },
+      beforeMount() {
+        console.log('lifeCycle-----beforeMounted')
+        console.log('lifeCycle-----beforeMounted --->this = ',this)
+      },
+      beforeUpdate() {
+        console.log('lifeCycle-----beforeUpdate')
+        console.log('lifeCycle-----beforeUpdate --->this = ',this)
+      },
+      updated() {
+        console.log('lifeCycle-----updated')
+        console.log('lifeCycle-----updated --->this = ',this)
+      },
+      render() {
+        return h('div',this.counter)
+      },
+    }
+
+    createApp(App).mount('#app')
+
+  </script>
+</body>
+</html>

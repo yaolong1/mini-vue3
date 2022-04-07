@@ -1,3 +1,4 @@
+import { NOOP } from './../../shared/src/index';
 import { VNode } from './vnode';
 import { proxyRefs, shallowReadonly, enableTracking, pauseTracking } from "@mini-vue3/reactivity"
 import { isFunction, isObject, ShapeFlags, isPromise } from "@mini-vue3/shared"
@@ -6,6 +7,8 @@ import { initProps } from "./componentProps"
 import { PublicInstanceProxyHandler } from "./componentPublicInstance"
 import { initSlots, InternalSlots } from "./componentSlots"
 import { CompilerOptions } from '@mini-vue3/compiler-core';
+import { applyOptions } from './componentOptions';
+
 
 //生命周期枚举
 export const enum LifecycleHooks {
@@ -263,12 +266,23 @@ function finishComponentSetup(instance, isSSR) {
 
       //如果组件选项存在template,调用编译器生成render函数
       if (compile && Component.template) {
-        instance.render = compile(Component.template, {}, Component.isGlobal)
+        //赋值给render选项
+        Component.render = compile(Component.template, {}, Component.isGlobal)
         //Component.isGlobal这个是我自己加的一个变量，为了区分当前引入mini-vue3的环境
       }
     }
-    //TODO
+
+    instance.render = Component.render || NOOP
   }
+
+
+  //applyOptions 此处需要创建vue2支持的optionsApi beforeCreated钩子在这里执行
+  setCurrentInstance(instance); //必须要设置当前实例，使在options中能够获取上下文
+  pauseTracking(); //options中响应式变量需要暂停依赖收集
+  applyOptions(instance);
+  enableTracking();//执行完成后开启依赖收集
+  setCurrentInstance(null); //执行完后需要设置为空
+
 }
 
 

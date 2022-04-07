@@ -1,5 +1,4 @@
-import { reactive, shallowReactive } from "@mini-vue3/reactivity"
-import { extend, isOn } from "@mini-vue3/shared"
+import { shallowReactive } from "@mini-vue3/reactivity"
 
 /**
  * 初始化组件实例的props 主要是给实例中的props和attrs赋值
@@ -9,7 +8,6 @@ import { extend, isOn } from "@mini-vue3/shared"
  * @param isSSR  是否是ssr环境
  */
 export function initProps(instance, rawProps, isStateful, isSSR = false) {
-  instance.data = isSSR ? instance.data : reactive(instance.data)
   const { props, attrs } = resolveProps(instance.propsOptions, rawProps)
 
   if (isStateful) {
