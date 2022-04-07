@@ -13,7 +13,7 @@ export { KeepAlive } from './components/KeepAlive'
 export { Teleport } from './components/Teleport'
 export { TransitionHooks, TransitionProps } from './components/BaseTransition'
 
-export { VNode, Comment, Fragment, Text, createVNode } from './vnode'
+export { VNode, Comment, Fragment, Text, createVNode, createElementVNode } from './vnode'
 
 export { registerRuntimeCompiler, ComponentInternalInstance, Component, RuntimeCompilerOptions, Data, SetupContext } from './component'
 

@@ -9,7 +9,6 @@ import { extend, isOn } from "@mini-vue3/shared"
  * @param isSSR  是否是ssr环境
  */
 export function initProps(instance, rawProps, isStateful, isSSR = false) {
-  debugger
   instance.data = isSSR ? instance.data : reactive(instance.data)
   const { props, attrs } = resolveProps(instance.propsOptions, rawProps)
 
