@@ -53,9 +53,22 @@
     //===================1.数组的查找方法：includes、lastIndexOf、indexOf===================
 
     // 1.1查找响应式对象
-    // const obj = {}
-    // let arr = reactive([obj])
+    const obj = {}
+    let arr = reactive([obj])
     // console.log(arr.includes(arr[0])) 
+
+    effect(() =>{
+      console.log(arr.includes(obj)) 
+    })
+
+    effect(() => {
+      arr.push(1) // 内部会触发length访问操作和设置值的操作
+    })
+
+    effect(() => {
+      arr.push(2) // 内部会触发length访问操作和设置值的操作
+    })
+
     /**
      * includes内部会调用arr[index]和arr[0]作比较，当调用arr[index]时，
      * 如果index == 0就会触发arr响应式对象的getter方法，因为arr[0]其实就是一个obj的响应式代理对象,当比较arr[index]是否等于arr[0]时会触发getter中逻辑

@@ -29,8 +29,17 @@ function createInstrumentations() {
     ; (['indexOf', 'includes', 'lastIndexOf'] as const).forEach(key => {
       const originMethod = Array.prototype[key] // 拿到原型上的方法
       instrumentations[key] = function (this, ...args) {
+
+        //在vue3源码中这里是需要对数组中的所有值进行track,以此来绑定effect。但是我们实现的miniVue3中的源码是不需要进行track的
+
+        //因为在includes方法内部会遍历this（代理数组），由于vue3中是将this转toRaw成普通的对象了，不存在响应式，所以在遍历的时候不会track
+        //在我们的miniVue3中为了减少代码量就没有将this转toRaw成普通的对象，所以在调用includes方法时直接遍历的是响应式数组，会自动触发track，
+
+
+        //首先去this即Proxy中取找是否存在
         let res = originMethod.apply(this, args)
         if (res === -1 || res === false) {
+          //Proxy没找到就在原对象中找
           res = originMethod.apply(this[ReactiveFlags.RAW], args)
         }
         return res
@@ -50,7 +59,8 @@ function createInstrumentations() {
           run() {
 
             //此时如果没有加判断!effectStack.includes(this)下面的例子会导致循环的track和trigger,解决的办法就是拦截push方法不让push方法执行的时候收集相应的依赖,这种方式最终数组的结果是正确的
-            // 此时如果加上了判断!effectStack.includes(this) 下面的例子不会导致循环的track和trigger，但是结果有误，会多执行一次，也就是数组会多添加一个值。因为某些原因run方法的判断!effectStack.includes(this)有别的用处，所以是必加的。
+            // 此时如果加上了判断!effectStack.includes(this) 下面的例子不会导致循环的track和trigger。
+            
             // 在这之上我们还应该为了保证数组的正确性所以要在调用此方法之前暂停依赖的追踪（收集），等方法执行完成之后再允许追踪----因为调用数组方法时，方法内部会访问数组的length属性并收集length的依赖，但是对于一个修改类型的操作是不需要收集依赖的 
             // 【这个理解有点牵强了，如果没懂看去看《vue.js 设计与实现》#129页】
             if (!effectStack.includes(this)) { 
@@ -68,7 +78,7 @@ function createInstrumentations() {
             arr.push(2) // 内部会触发length访问操作和设置值的操作
           })
        */
-      pauseTracking() // 禁止收集依赖
+      pauseTracking() // 调用方法的过程中禁止收集依赖
       let res = originMethod.apply(this, args)
       enableTracking() //方法执行完后再设置回允许收集依赖
 
@@ -89,13 +99,13 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
       return isReadOnly
     } else if (
       key === ReactiveFlags.RAW
-      &&
-      // TODO 不理解为什么要这么赋值给 receiver
-      (receiver =
-        isReadOnly
-          ? isShallow ? shallowReadonlyMap : readonlyMap
-          : isShallow ? shallowReactiveMap : reactiveMap
-      ).get(target)
+      // &&
+      // // 根据不同的类型(readonly、shallow)返回不同的receiver
+      // (receiver =
+      //   isReadOnly
+      //     ? isShallow ? shallowReadonlyMap : readonlyMap
+      //     : isShallow ? shallowReactiveMap : reactiveMap
+      // ).get(target)
     ) { //  如果外部访问的是__v_raw说明需要拿原对象
       return target
     }
