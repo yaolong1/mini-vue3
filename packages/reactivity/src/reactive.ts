@@ -42,6 +42,11 @@ export function getTargetType(value) {
 
 
 export function reactive(target) {
+
+  //reactive创建对象，如果target是只读直接返回
+  if (isReadonly(target)) { 
+    return target
+  }
   return createReactiveObject(target, false, reactiveMap, mutableHandlers, mutableCollectionHandlers)
 }
 

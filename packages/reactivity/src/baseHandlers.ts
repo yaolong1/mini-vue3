@@ -60,7 +60,7 @@ function createInstrumentations() {
 
             //此时如果没有加判断!effectStack.includes(this)下面的例子会导致循环的track和trigger,解决的办法就是拦截push方法不让push方法执行的时候收集相应的依赖,这种方式最终数组的结果是正确的
             // 此时如果加上了判断!effectStack.includes(this) 下面的例子不会导致循环的track和trigger。
-            
+
             // 在这之上我们还应该为了保证数组的正确性所以要在调用此方法之前暂停依赖的追踪（收集），等方法执行完成之后再允许追踪----因为调用数组方法时，方法内部会访问数组的length属性并收集length的依赖，但是对于一个修改类型的操作是不需要收集依赖的 
             // 【这个理解有点牵强了，如果没懂看去看《vue.js 设计与实现》#129页】
             if (!effectStack.includes(this)) { 

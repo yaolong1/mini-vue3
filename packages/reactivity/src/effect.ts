@@ -260,7 +260,7 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
 
 
               setTimeout(() => {
-                state.arr.length = 3 // 修改之后[1,2,3] state.arr[3] = undefined
+                state.arr.length = 3 // 修改之后[1,2,3] state.arr[3] = undefined    索引3之后的依赖(即 key >= newValue) 需要更新将dep加到effect = new Set中
               }, 2000)
        * 
        */

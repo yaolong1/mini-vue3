@@ -13,8 +13,10 @@
 
 </body>
 <script src="../dist/vue.global.js"></script>
+<script src="http://unpkg.com/vue"></script>
 <script>
   const { effect, reactive, ref, computed, watch } = MiniVue3
+  // const { effect, reactive, ref, computed, watch } = Vue
   const obj = {}
   const proto = { a: 1 } //原型
   const parent = reactive(proto)
@@ -27,6 +29,7 @@
   })
   child.a = 2 // child原对象上没有，就回去原型链上找a 此时会触发两次trigger,第一次触发是在child响应式对象上、第二次是在parent对象上由于两个对象都是响应式，所以要触发两次。解决办法： 《vue.js 设计与实现》 #合理的触发响应性-106页
 
+  console.log(child)
 </script>
 
 </html>

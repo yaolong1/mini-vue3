@@ -12,15 +12,25 @@
   <script src="../node_modules/@mini-vue3/reactivity/dist/reactivity.global.js"></script>
   <script src="http://unpkg.com/vue"></script>
   <script>
+    // const {
+    //   reactive,
+    //   readonly,
+    //   shallowReactive,
+    //   shallowReadonly, effect } = MiniVue3Reactivity
+
     const {
       reactive,
       readonly,
       shallowReactive,
-      shallowReadonly, effect } = MiniVue3Reactivity
+      shallowReadonly, effect } = Vue
 
-    const state = reactive({ name: 'ss', age: { n: 1 } })
+    
+    const obj = { name: 'ss', age: { n: 1 } }
 
-    const state1 = reactive(state)
+    
+    const state = readonly(obj)
+
+    const state1 = shallowReactive(state)
     console.log(state === state1)
     effect(() => {
       console.log(state1.age.n)
