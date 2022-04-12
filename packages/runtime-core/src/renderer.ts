@@ -590,7 +590,7 @@ function baseCreateRenderer(
      */
     while (i <= e1 && i <= e2) { //如果i和 新的孩子或老的孩子的指针重合 说明相同的比较完毕
       const n1 = c1[i] // 老节点
-      const n2 = normalizeVNode(c2[i]) // 要先常规化一下，不然后面比较的时候新节点有可能是一个字符串
+      const n2 = c2[i] = normalizeVNode(c2[i]) // 要先常规化一下，不然后面比较的时候新节点有可能是一个字符串
       // 如两个节点是相同节点,说明可以复用el,则需要递归比对自身属性和孩子是否更新
       if (isSameVNodeType(n1, n2)) {
         patch(n1, n2, container)
@@ -622,7 +622,7 @@ function baseCreateRenderer(
 
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1]
-      const n2 = normalizeVNode(c2[e2])
+      const n2 = c2[e2] = normalizeVNode(c2[e2])
 
       if (isSameVNodeType(n1, n2)) {
         // 相同更新
