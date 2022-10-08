@@ -81,7 +81,6 @@ function createInstrumentations() {
       pauseTracking() // 调用方法的过程中禁止收集依赖
       let res = originMethod.apply(this, args)
       enableTracking() //方法执行完后再设置回允许收集依赖
-
       return res
     }
   })
@@ -216,7 +215,7 @@ const shallowReadonlyGet = createGetter(true, true);
  */
 // 为什么ownKeys拦截函数没有key这个参数? 例如对象和数组的for...in 操作是没有针对某一个key做操作，而是整个对象所以参数只有target
 function ownKeys(target) {
-  // 如果当前操作的对象时数组时直接用length为依赖的key名称，因为操作数组都要改变数组长度
+  // 如果当前操作的对象是数组时直接用length为依赖的key名称，因为操作数组都要改变数组长度
   track(target, TrackOpTypes.ITERATE, isArray(target) ? 'length' : ITERATE_KEY) //这种情况需要收集依赖
   return Reflect.ownKeys(target)
 }
