@@ -9,25 +9,14 @@
 </head>
 
 <body>
+  <script src="../dist1/reactivity.global.js"></script>
   <script>
-    let set = new Set
+    const { ref, effect } = MiniVue3Reactivity
+    const countRef = ref(1);
 
-    let arr = new Set()
-    arr.add(1)
-    arr.add(2)
-    let arr2 = new Set()
-    arr.add(1)
-
-    let b = []
-    b.push(arr)
-    b.push(arr2)
-
-    // b = []
-    for (let arr of b) {
-      arr.delete(1)
-    }
-
-
+    effect(() => {
+      console.log(countRef.value);
+    })
 
   </script>
 

@@ -3,9 +3,6 @@
   "private": "true",
   "version": "1.0.0",
   "main": "index.js",
-  "workspaces": [
-    "packages/*"
-  ],
   "repository": "https://gitee.com/yaolonga/mini-vue3.git",
   "author": "耀龙啊 <1638538651@qq.com>",
   "scripts": {
@@ -15,13 +12,14 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "minimist": "^1.2.5",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.1.3",
+    "esbuild": "^0.15.10",
     "execa": "^4.0.2",
+    "minimist": "^1.2.5",
     "rollup": "^2.67.0",
     "rollup-plugin-typescript2": "^0.31.2",
-    "typescript": "^4.5.5",
-    "serve": "^13.0.2"
+    "serve": "^13.0.2",
+    "typescript": "^4.5.5"
   }
 }

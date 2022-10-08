@@ -51,7 +51,6 @@ function createConfig(format, output) {
         tsconfig: path.resolve(__dirname, 'tsconfig.json')
       }),
       resolvePlugin() //解析第三方插件模块
-
     ]
   }
 }

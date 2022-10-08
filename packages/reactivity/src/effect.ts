@@ -60,6 +60,7 @@ function cleanupEffect(effect) {
 }
 
 export class ReactiveEffect {
+
   active = true //是否是响应式的effect
   deps = [] // 让effect记录那些属性依赖了，同时要记录当前属性依赖了哪个effect
   constructor(public fn, public scheduler = null) {

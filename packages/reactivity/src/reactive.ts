@@ -70,7 +70,7 @@ export const shallowReadonlyMap = new WeakMap()
 export const shallowReactiveMap = new WeakMap()
 
 /**
- * 
+ *  
  * @param target 需要代理的原对象
  * @param isReadonly 当前创建的响应式对象是否只读
  * @param proxyMap 储存当前响应式对象的缓存
