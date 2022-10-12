@@ -112,6 +112,15 @@ export function createReactiveObject(target, isReadonly, proxyMap, baseHandlers,
   return proxy
 }
 
+export const def = (obj: object, key: string | symbol, value: any) => {
+  Object.defineProperty(obj, key, {
+    configurable: true,
+    enumerable: false,
+    value
+  })
+}
+
+
 export const toReactive = (val) => isObject(val) ? reactive(val) : val
 export const toReadonly = (val) => isObject(val) ? readonly(val) : val
 
@@ -119,6 +128,11 @@ export const toReadonly = (val) => isObject(val) ? readonly(val) : val
 export function toRaw(observed) {
   const raw = observed && (observed as any)[ReactiveFlags.RAW]
   return raw ? toRaw(raw) : observed
+}
+//将一个对象标记为不可被转为代理。返回该对象本身。
+export function markRaw(observed) {
+  def(observed, ReactiveFlags.SKIP, true);
+  return observed;
 }
 
 export function isReadonly(val) {

@@ -82,8 +82,8 @@ export class ReactiveEffect {
     }
     try {
       // effectStack.push(activeEffect = this) //已经弃用
-      this.parent = activeEffect = this;
-
+      this.parent = activeEffect
+      activeEffect = this
       /**
        * cleanupEffect在执行之前先清除掉当前的effect的deps防止出现以下情况
        *  const flag = reactive({ value: true })
@@ -351,5 +351,11 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
 
 export function triggerEffects(dep) {
   //effect !== activeEffect 解决在effect中修改响应式变量导致的无限循环
-  dep.forEach((effect: any) => activeEffect != effect && (effect.scheduler ? effect.scheduler() : effect.run()))
+  console.log(activeEffect != effect);
+  dep.forEach((effect: any) => {
+    if (activeEffect != effect) {
+      const a = (effect.scheduler ? effect.scheduler() : effect.run())
+      console.info(a)
+    }
+  })
 }

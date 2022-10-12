@@ -11,15 +11,11 @@
 <body>
   <script src="../dist/reactivity.global.js"></script>
   <script>
-    const { ref, effect, reactive } = MiniVue3Reactivity
-    const arr = reactive([0])
-      effect(() => {
-        arr.push(1) // 内部会触发length访问操作和设置值的操作
-      })
-
-      effect(() => {
-        arr.push(2) // 内部会触发length访问操作和设置值的操作
-      })
+    const { ref, effect, reactive, markRaw } = MiniVue3Reactivity
+    const arr = reactive({ value: 1 })
+    effect(() => {
+      console.log('a', arr.value)
+    })
 
   </script>
 

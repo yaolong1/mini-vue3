@@ -3,7 +3,8 @@ export {
   readonly,
   shallowReactive,
   shallowReadonly,
-  toRaw
+  toRaw,
+  markRaw
 } from "./reactive"
 
 
