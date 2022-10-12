@@ -5,6 +5,7 @@ import { mutableCollectionHandlers, readonlyCollectionHandlers, shallowReactiveC
 export enum ReactiveFlags {
   IS_REACTIVE = '__v_isReactive',
   IS_READONLY = '__v_isReadonly',
+  SKIP = '__v_skip',
   RAW = '__v_raw'
 }
 
@@ -35,8 +36,8 @@ function targetTypeMap(rawType: string) {
  * @param value 
  */
 export function getTargetType(value) {
-  const rawType = toRawType(value)
-  return targetTypeMap(rawType)
+   //如果对象不需要代理或者是一个不可扩展对象，就不需要代理
+  return value[ReactiveFlags.SKIP]?TargetTypes.INVALID:targetTypeMap(toRawType(value))
 }
 
 

@@ -12,7 +12,8 @@ export const MAP_KEY_ITERATE_KEY = Symbol()
 
 
 let activeEffect
-let effectStack = [] //防止嵌套effect 导致当前的activeEffect错乱 用栈数据结构的形式解决，在effect函数执行之前就把自己压入栈中执行完后弹出即可
+// vue3.0使用栈维护effect 已经被弃用,在vue3.2中才用的是ReactiveEffect实例属性parent来保存父effect，从而避免栈的pop、push操作的性能消耗
+//  let effectStack = [] //防止嵌套effect 导致当前的activeEffect错乱 用栈数据结构的形式解决，在effect函数执行之前就把自己压入栈中执行完后弹出即可
 // effect(() => { //effect1
 //   stat.a  // effectStack = [effect1]
 //   effect(() => {  //effect2
@@ -20,6 +21,7 @@ let effectStack = [] //防止嵌套effect 导致当前的activeEffect错乱 用�
 //   })
 //   stat.c // effectStack = [effect1]
 // })
+
 /**
  * 类的方式创建的effect
  * @param fn 
@@ -60,7 +62,7 @@ function cleanupEffect(effect) {
 }
 
 export class ReactiveEffect {
-
+  parent = null //维护父effect
   active = true //是否是响应式的effect
   deps = [] // 让effect记录那些属性依赖了，同时要记录当前属性依赖了哪个effect
   constructor(public fn, public scheduler = null) {
@@ -70,35 +72,44 @@ export class ReactiveEffect {
     if (!this.active) {
       return this.fn()
     }
-    if (!effectStack.includes(this)) {
-      // if (true) {
-      try {
-        effectStack.push(activeEffect = this)
-
-
-        /**
-         * cleanupEffect在执行之前先清除掉当前的effect的deps防止出现以下情况
-         *  const flag = reactive({ value: true })
-            const data = reactive({ msg: '我是branch true' })
-  
-            effect(() => {
-              if (flag.value) {
-                console.log(data.msg)
-              } else {
-                console.log('false branch')
-              }
-            })
-  
-            flag.value = false 
-  
-            上述例子如果flag.value 的值变成了false后，此时我们修改data.msg的值也会触发effect，为了避免一些不需要的依赖触发，在执行effect函数之前要清除当前effect函数中响应式变量所依赖的dep
-         */
-        cleanupEffect(this)
-        return this.fn()
-      } finally {
-        effectStack.pop()
-        activeEffect = effectStack[effectStack.length - 1]
+    // 和 if (!effectStack.includes(this)) 效果一样就是找一下parent是否存在当前实例防止爆栈
+    let parent: ReactiveEffect | undefined = activeEffect
+    while (parent) {
+      if (parent === this) {
+        return
       }
+      parent = parent.parent
+    }
+    try {
+      // effectStack.push(activeEffect = this) //已经弃用
+      this.parent = activeEffect = this;
+
+      /**
+       * cleanupEffect在执行之前先清除掉当前的effect的deps防止出现以下情况
+       *  const flag = reactive({ value: true })
+          const data = reactive({ msg: '我是branch true' })
+ 
+          effect(() => {
+            if (flag.value) {
+              console.log(data.msg)
+            } else {
+              console.log('false branch')
+            }
+          })
+ 
+          flag.value = false 
+ 
+          上述例子如果flag.value 的值变成了false后，此时我们修改data.msg的值也会触发effect，为了避免一些不需要的依赖触发，在执行effect函数之前要清除当前effect函数中响应式变量所依赖的dep
+       */
+      cleanupEffect(this)
+      return this.fn()
+    } finally {
+      /* //弃用栈维护effect    
+        effectStack.pop() 
+        activeEffect = effectStack[effectStack.length - 1]  
+      */
+      activeEffect = this.parent;
+      this.parent = null;
     }
   }
 
@@ -327,6 +338,14 @@ export function trigger(target, type, key?, newValue?, oldValue?) {
   }
 
   //此处的createDep是为了和cleanupEffect配合，直接重新创建一个引用避免循环执行
+  /**
+   * eg：又删除又添加会触发并发修改异常
+   * const set = new Set([1,2])
+   * set.forEach(i => {
+   *    set.add(1);
+   *    set.delete(1);
+   * })
+   */
   triggerEffects(createDep(effects))
 }
 

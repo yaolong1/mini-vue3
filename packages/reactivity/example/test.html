@@ -9,14 +9,17 @@
 </head>
 
 <body>
-  <script src="../dist1/reactivity.global.js"></script>
+  <script src="../dist/reactivity.global.js"></script>
   <script>
-    const { ref, effect } = MiniVue3Reactivity
-    const countRef = ref(1);
+    const { ref, effect, reactive } = MiniVue3Reactivity
+    const arr = reactive([0])
+      effect(() => {
+        arr.push(1) // 内部会触发length访问操作和设置值的操作
+      })
 
-    effect(() => {
-      console.log(countRef.value);
-    })
+      effect(() => {
+        arr.push(2) // 内部会触发length访问操作和设置值的操作
+      })
 
   </script>
 

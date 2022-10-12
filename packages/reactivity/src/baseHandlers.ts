@@ -98,13 +98,13 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
       return isReadOnly
     } else if (
       key === ReactiveFlags.RAW
-      // &&
-      // // 根据不同的类型(readonly、shallow)返回不同的receiver
-      // (receiver =
-      //   isReadOnly
-      //     ? isShallow ? shallowReadonlyMap : readonlyMap
-      //     : isShallow ? shallowReactiveMap : reactiveMap
-      // ).get(target)
+      &&
+      // 根据不同的类型(readonly、shallow)返回不同的receiver
+      (receiver =
+        isReadOnly
+          ? isShallow ? shallowReadonlyMap : readonlyMap
+          : isShallow ? shallowReactiveMap : reactiveMap
+      ).get(target)
     ) { //  如果外部访问的是__v_raw说明需要拿原对象
       return target
     }
@@ -122,6 +122,7 @@ function createGetter(isReadOnly = false, isShallow = false) { //拦截对象获
 
     // 当使用for...of循环时，他们都会读取数组的Symbol.iterator属性。
     // 此属性是一个symbol值，为了避免发生意外的错误, 以及性能的考虑，不应该和副作用函数建立联系, 因此需要过滤掉  《vue.js 设计与实现 --霍春阳》 #123页
+    // 此处symbol值不需要带
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
     }
@@ -177,7 +178,7 @@ function createSetter(isShallow = false) { //拦截对象设置
       所以要触发两次。解决办法： target === toRaw(receiver) 《vue.js 设计与实现》 #合理的触发响应性-106页
       child.a = 2 
      */
-    if (target === toRaw(receiver)) {
+    if (target === toRaw(receiver)) { //只处理自己的，不是自己的就忽略
       if (!hadKey) {
         //新增
         trigger(target, TriggerOpTypes.ADD, key, value)
