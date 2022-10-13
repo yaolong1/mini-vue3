@@ -17,7 +17,7 @@ const pkg = require(resolve(__dirname, `../packages/${target}/package.json`));
 const options = pkg.buildOptions; //package.json中的自定义的配置
 
 const outputConfig = {
-  'esm-bundler': {
+  'esm': {
     file: resolve(__dirname, `../packages/${target}/dist/${target}.esm-bundler.js`), //打包输出
     format: 'es'
   },

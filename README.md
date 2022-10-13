@@ -94,7 +94,8 @@
   ```
 - 打包单个模块
   ```
-    yarn dev -m 模块名
+    yarn dev  模块名 -f 打包方式
+    # 打包方式有三种cjs、esm、global
   ```
 
 3. 使用
@@ -203,7 +204,7 @@
 
 
 #### Git 贡献提交规范
-- 参考 vue 规范 (Angular)
+- 参考 vue 规范 
   - feat 增加新功能
   - fix 修复问题/BUG
   - style 代码风格相关无影响运行结果的
