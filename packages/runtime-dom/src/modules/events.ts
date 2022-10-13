@@ -43,7 +43,7 @@ function createInvoker(nextValue) {
     //     // 但是由于data是响应式的数据，data改变会导致再次执行render,而此时data.value=true,div已经绑定事件。
     //     // 此时执行div标签执行只有一个原因：说明事件绑定发生在事件冒泡之前 《vue.js 设计与实现》 #201页
 
-    //     // 解决：屏蔽事件绑定时间晚于事件触发时间的事件处理函数
+    //     // 解决：屏蔽事件绑定时间晚于事件触发时间的事件处理函数wwwwwwwwww
     //     console.log(1)
     //     return h('div', { onClick: data.value ? () => console.log('父级div') : {} }, h('p', { onClick: () => { data.value = true } }, 'p孩子标签'))
     //   }

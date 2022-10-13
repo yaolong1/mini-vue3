@@ -417,7 +417,7 @@ function baseCreateRenderer(
 
       //判断vnode是否应该keepAlive，如果是就不需要卸载,直接让其无效
       if (shapeFlag & ShapeFlags.COMPONENT_SHOULD_KEEP_ALIVE) {
-     
+
         (parentComponent.ctx as KeepAliveContext).deactivate(vnode)
         return
       }
@@ -1314,7 +1314,17 @@ function baseCreateRenderer(
 
 
   const render = (vnode, container) => { //将虚拟节点转化为真实节点渲染到容器中
-    patch(null, vnode, container) // patch(prevNode,nextNode,真实节点)
+
+    if (vnode == null) {
+      debugger
+      console.log('xxx');
+      //卸载
+    } else {
+      //更新和创建
+      patch(container._vnode || null, vnode, container) // patch(prevNode,nextNode,真实节点)
+    }
+    //缓存起来，以后render更新时复用
+    container._vnode = vnode;
   }
 
   const internals: RendererInternals = {

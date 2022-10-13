@@ -71,7 +71,7 @@ export function createVNode(type, props = null, children = null, patchFlag = 0):
     children,
     key: props && props.key,
     component: null, //如果当前的当前的vnode是一个组件，应当保存当前组件的实例
-    el: null, //虚拟节点对应的虚拟节点
+    el: null, //虚拟节点对应的真实节点
     shapeFlag, // 可以同时描述虚拟节点的类型和它孩子节点的类型 (使用 | & )
     patchFlag,
     anchor: null,
